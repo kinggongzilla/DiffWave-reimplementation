@@ -37,10 +37,11 @@ class DiffWaveBlock(torch.nn.Module):
 
 
 class DiffWave(torch.nn.Module):
-    def __init__(self, C, timesteps, variance_schedule) -> None:
+    def __init__(self, C, num_blocks, timesteps, variance_schedule) -> None:
         super().__init__()
         self.timesteps = timesteps
         self.variance_schedule = variance_schedule
+        self.num_blocks = num_blocks
 
         #in
         self.fc1 = torch.nn.Linear(128, 512)
@@ -48,8 +49,9 @@ class DiffWave(torch.nn.Module):
         self.conv_in_1 = torch.nn.Conv1d(1, C, 1)
 
         #blocks
-        self.layer1 = DiffWaveBlock(0, C)
-        self.layer2 = DiffWaveBlock(1, C)
+        self.blocks = torch.nn.ModuleList()
+        for i in range(num_blocks):
+            self.blocks.append(DiffWaveBlock(i, C))
 
         #out
         self.conv_out_1 = torch.nn.Conv1d(C, C, 1)
@@ -67,10 +69,14 @@ class DiffWave(torch.nn.Module):
         t = self.fc2(t)
         t = F.silu(t)
 
-        #blocks
-        x = self.layer1(x, t)
-        x = self.layer2(x, t)
+        residual_results = []
 
+        #blocks
+        for block in self.blocks:
+            x = block(x, t)
+            residual_results.append(x)
+        x = torch.sum(torch.stack(residual_results), dim=0) #TODO: check if this does the correct summation
+            
         #out
         x = self.conv_out_1(x)
         x = self.conv_out_2(x)

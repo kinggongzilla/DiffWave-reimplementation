@@ -3,11 +3,11 @@ import tqdm
 from model import DiffWave
 
 
-def train(C, trainloader, epochs, timesteps, variance_schedule):
+def train(C, num_blocks, trainloader, epochs, timesteps, variance_schedule):
 
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
-    model = DiffWave(C, timesteps, variance_schedule)
+    model = DiffWave(C, num_blocks, timesteps, variance_schedule)
 
     model.train()
     optimizer = torch.optim.Adam(model.parameters(), lr=0.0001)
@@ -37,8 +37,8 @@ def train(C, trainloader, epochs, timesteps, variance_schedule):
             loss.backward()
             optimizer.step()
             if i % 5 == 0:
-                print(f'epoch: {epoch} | step: {i} | loss: {loss.item()}')
-        print(f'Epoch DONE! epoch: {epoch} | loss: {loss.item()}')
+                print(f'epoch: {epoch} | batch: {i} | loss: {loss.item()}')
+        print(f'Epoch {epoch} DONE!')
 
     
     
