@@ -1,6 +1,7 @@
 import math
 import torch
 import torch.nn.functional as F
+import torchaudio
 
 class DiffWaveBlock(torch.nn.Module):
     def __init__(self, layer_index, C) -> None:
@@ -36,8 +37,11 @@ class DiffWaveBlock(torch.nn.Module):
 
 
 class DiffWave(torch.nn.Module):
-    def __init__(self, C) -> None:
+    def __init__(self, C, timesteps, variance_schedule) -> None:
         super().__init__()
+        self.timesteps = timesteps
+        self.variance_schedule = variance_schedule
+
         #in
         self.fc1 = torch.nn.Linear(128, 512)
         self.fc2 = torch.nn.Linear(512, 512)
@@ -51,27 +55,20 @@ class DiffWave(torch.nn.Module):
         self.conv_out_1 = torch.nn.Conv1d(C, C, 1)
         self.conv_out_2 = torch.nn.Conv1d(C, 1, 1)
 
-    def forward(self, x):
+    def forward(self, x, t):
 
         #waveform input
         x = self.conv_in_1(x)
 
-        #time embedding t=0
-        t=self.embed_timestep(0)
-        t=torch.broadcast_to(t, (x.shape[0], 128)) #broadcast to batch size
+        #time embedding
+        t=self.embed_timestep(t)
         t = self.fc1(t)
         t = F.silu(t)
         t = self.fc2(t)
         t = F.silu(t)
-        x = self.layer1(x, t)
 
-        #time embedding t=1
-        t=self.embed_timestep(0)
-        t=torch.broadcast_to(t, (x.shape[0], 128)) #broadcast to batch size
-        t = self.fc1(t)
-        t = F.silu(t)
-        t = self.fc2(t)
-        t = F.silu(t)
+        #blocks
+        x = self.layer1(x, t)
         x = self.layer2(x, t)
 
         #out
@@ -79,12 +76,38 @@ class DiffWave(torch.nn.Module):
         x = self.conv_out_2(x)
         return x
 
-    def embed_timestep(self, t):
+
+    def sample(self, x_t):
+        for t in reversed(range(1, self.timesteps)):
+            y_pred = self.forward(x_t, t)
+            beta = self.variance_schedule[t]
+            alpha = 1-beta
+            alpha_t = alpha**t
+            beta_t = (1-(alpha_t/alpha))/(1-alpha_t) * beta
+
+            mu = 1/torch.sqrt(alpha) * (x_t - (beta/torch.sqrt(1-alpha_t)*y_pred))
+            sd = torch.sqrt(beta_t)
+            # print('beta: ', beta)
+            # print('alpha: ', alpha)
+            # print('alpha_t: ', alpha_t)
+            # print('beta_t: ', beta_t)
+            # print('(alpha_t/alpha): ', (alpha_t/alpha))
+            # print('(1-(alpha_t/alpha))/(1-alpha_t): ', (1-(alpha_t/alpha))/(1-alpha_t))
+            # print(torch.eye(mu.shape[0], mu.shape[1]))
+
+            x_t = torch.normal(mu, sd*torch.eye(mu.shape[0], mu.shape[1]))
+            waveform = x_t[0].detach()
+            path = "./outputs/sample.wav"
+            torchaudio.save(path, waveform, 44100)
+        return waveform
+            
+
+    def embed_timestep(self, t, batch_size=1):
         embedding = torch.zeros(1, 128)
         for i in range(64):
             embedding[0, i] = math.sin(10**((i*4)/63)*t)
         for j in range(64):
             embedding[0, j+64] = math.cos(10**((j*4)/63)*t)
-        return embedding
+        return torch.broadcast_to(embedding, (batch_size, 128)) #broadcast to batch size
 
 
