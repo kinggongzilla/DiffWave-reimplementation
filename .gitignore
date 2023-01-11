@@ -2,4 +2,6 @@
 /.ipynb_checkpoints
 /source/__pycache__
 /outputs
+/azure_test
 model.pt
+sample.wav

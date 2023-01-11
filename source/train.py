@@ -26,10 +26,10 @@ def train(C, num_blocks, trainloader, epochs, timesteps, variance_schedule):
             alpha_t = alpha**t
             
             x = torch.sqrt(alpha_t)*x + torch.sqrt(1-alpha_t)*noise
-
             model.to(device)
             x = x.to(device)
             t = t.to(device)
+            noise = noise.to(device)
 
             y_pred = model.forward(x, t)
             loss_func = torch.nn.MSELoss(reduction='mean')

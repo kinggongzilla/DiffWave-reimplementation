@@ -44,9 +44,17 @@ class DiffWave(torch.nn.Module):
         self.num_blocks = num_blocks
 
         #in
-        self.fc1 = torch.nn.Linear(128, 512)
-        self.fc2 = torch.nn.Linear(512, 512)
-        self.conv_in_1 = torch.nn.Conv1d(1, C, 1)
+        self.timestep_in = torch.nn.Sequential(
+            torch.nn.Linear(128, 512),
+            torch.nn.SiLU(),
+            torch.nn.Linear(512, 512),
+            torch.nn.SiLU()
+        )
+
+        self.waveform_in = torch.nn.Sequential(
+            torch.nn.Conv1d(1, C, 1),
+            torch.nn.ReLU()
+        )
 
         #blocks
         self.blocks = torch.nn.ModuleList()
@@ -54,20 +62,18 @@ class DiffWave(torch.nn.Module):
             self.blocks.append(DiffWaveBlock(i, C))
 
         #out
-        self.conv_out_1 = torch.nn.Conv1d(C, C, 1)
-        self.conv_out_2 = torch.nn.Conv1d(C, 1, 1)
+        self.out = torch.nn.Sequential(torch.nn.Conv1d(C, C, 1), torch.nn.Conv1d(C, 1, 1))
+
 
     def forward(self, x, t):
 
         #waveform input
-        x = self.conv_in_1(x)
+        x = self.waveform_in(x)
 
         #time embedding
-        t=self.embed_timestep(t)
-        t = self.fc1(t)
-        t = F.silu(t)
-        t = self.fc2(t)
-        t = F.silu(t)
+        t=self.embed_timestep(t).to(x.device)
+
+        t = self.timestep_in(t)
 
         residual_results = []
 
@@ -78,8 +84,7 @@ class DiffWave(torch.nn.Module):
         x = torch.sum(torch.stack(residual_results), dim=0) #TODO: check if this does the correct summation
             
         #out
-        x = self.conv_out_1(x)
-        x = self.conv_out_2(x)
+        x = self.out(x)
         return x
 
 
@@ -93,17 +98,10 @@ class DiffWave(torch.nn.Module):
 
             mu = 1/torch.sqrt(alpha) * (x_t - (beta/torch.sqrt(1-alpha_t)*y_pred))
             sd = torch.sqrt(beta_t)
-            # print('beta: ', beta)
-            # print('alpha: ', alpha)
-            # print('alpha_t: ', alpha_t)
-            # print('beta_t: ', beta_t)
-            # print('(alpha_t/alpha): ', (alpha_t/alpha))
-            # print('(1-(alpha_t/alpha))/(1-alpha_t): ', (1-(alpha_t/alpha))/(1-alpha_t))
-            # print(torch.eye(mu.shape[0], mu.shape[1]))
 
             x_t = torch.normal(mu, sd*torch.eye(mu.shape[0], mu.shape[1]))
             waveform = x_t[0].detach()
-            path = "./outputs/sample.wav"
+            path = "./sample.wav"
             torchaudio.save(path, waveform, 44100)
         return waveform
             
