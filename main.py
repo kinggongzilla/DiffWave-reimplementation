@@ -22,7 +22,7 @@ chunked_data = ChunkedMusDBHQ(audio_dir=path)
 
 trainloader = torch.utils.data.DataLoader(
     chunked_data,
-    batch_size=16,
+    batch_size=4,
     shuffle=True,
     )
 
