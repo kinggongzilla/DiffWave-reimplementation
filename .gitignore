@@ -2,6 +2,8 @@
 /.ipynb_checkpoints
 /source/__pycache__
 /outputs
+/chunked_audio
+/raw_samples
 /azure_test
 model.pt
 sample.wav

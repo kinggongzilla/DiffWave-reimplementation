@@ -35,8 +35,8 @@ def chop_wav(song_id: str, audio_path: str, out_dir: str, length: int):
 
 
 if __name__ == '__main__':
-    in_path=os.path.join('data', 'musdb18hq', 'train')
-    out_path=os.path.join('data', 'chunked_audio')
+    in_path=os.path.join('raw_data')
+    out_path=os.path.join('chunked_audio')
 
     if len(sys.argv) > 1:
         in_path = sys.argv[1]
