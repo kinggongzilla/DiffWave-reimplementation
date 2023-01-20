@@ -8,6 +8,8 @@ import torchaudio
 from source.dataset import ChunkedMusDBHQ
 from source.train import train
 
+#clear cuda memory
+torch.cuda.empty_cache()
 
 #TODO: load dataset
 # path = os.path.join('data', 'chunked_audio')
