@@ -1,6 +1,6 @@
 import torch
 import tqdm
-from model import DiffWave
+from source.model import DiffWave
 
 
 def train(C, num_blocks, trainloader, epochs, timesteps, variance_schedule):

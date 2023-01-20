@@ -21,5 +21,6 @@ class ChunkedMusDBHQ(Dataset):
 
     def __getitem__(self, index):
         file = os.listdir(self.audio_dir)[index]
-        waveform, sample_rate = torchaudio.load(self.audio_dir + file)
+        waveform, sample_rate = torchaudio.load(os.path.join(self.audio_dir, file))
+        print(waveform.shape)
         return waveform, sample_rate
