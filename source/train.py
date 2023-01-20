@@ -13,9 +13,7 @@ def train(C, num_blocks, trainloader, epochs, timesteps, variance_schedule):
     optimizer = torch.optim.Adam(model.parameters(), lr=0.0001)
     for epoch in range(epochs):
         for i, x in enumerate(trainloader):
-            print('x[0] shape: ', x[0].shape)
             x = x[0] #get waveform from tuple; batch size, channels, length
-            # x = x[:,0:1,:] #get single channel waveform from waveform with two channels; slicing [0:1] to preserve dimensions
 
             optimizer.zero_grad()
 
