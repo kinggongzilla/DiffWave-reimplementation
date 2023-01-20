@@ -10,7 +10,12 @@ from source.train import train
 
 
 #TODO: load dataset
-path = os.path.join('data', 'chunked_audio')
+# path = os.path.join('data', 'chunked_audio')
+path = os.path.join('chunked_audio')
+
+if len(sys.argv) > 1:
+        path = sys.argv[1]
+
 chunked_data = ChunkedMusDBHQ(audio_dir=path)
 
 trainloader = torch.utils.data.DataLoader(
