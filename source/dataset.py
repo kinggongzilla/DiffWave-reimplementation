@@ -22,7 +22,8 @@ class ChunkedMusDBHQ(Dataset):
     def __getitem__(self, index):
         file = os.listdir(self.audio_dir)[index]
         waveform, sample_rate = torchaudio.load(os.path.join(self.audio_dir, file))
-        print(waveform.shape)
-        waveform = waveform[0] #only take first channel
+        
+        waveform = waveform[0:1,:] #get single channel waveform from waveform with two channels; slicing [0:1] to preserve dimensions
 
+        print(waveform.shape)
         return waveform, sample_rate
