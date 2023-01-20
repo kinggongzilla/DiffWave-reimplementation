@@ -20,11 +20,11 @@ chunked_data = ChunkedMusDBHQ(audio_dir=path)
 
 trainloader = torch.utils.data.DataLoader(
     chunked_data,
-    batch_size=2,
+    batch_size=16,
     shuffle=True,
     )
 
 #define variance schedule
 variance_schedule = torch.linspace(0.001, 0.05, 50)
 
-train(8, 25, trainloader, 1, len(variance_schedule), variance_schedule) #C, num_blocks, trainloader, epochs, timesteps, variance_schedule
+train(64, 25, trainloader, 1, len(variance_schedule), variance_schedule) #C (num residual channels), num_blocks, trainloader, epochs, timesteps, variance_schedule

@@ -7,7 +7,7 @@ class DiffWaveBlock(torch.nn.Module):
     def __init__(self, layer_index, C) -> None:
         super().__init__()
         self.layer_index = layer_index
-        self.C = C
+        self.C = C #C are number of residual channels
         self.input = None
         self.x_skip = None
 
