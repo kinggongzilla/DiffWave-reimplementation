@@ -29,4 +29,4 @@ trainloader = torch.utils.data.DataLoader(
 #define variance schedule
 variance_schedule = torch.linspace(0.001, 0.05, 50)
 
-train(64, 25, trainloader, 1, len(variance_schedule), variance_schedule) #C (num residual channels), num_blocks, trainloader, epochs, timesteps, variance_schedule
+train(32, 10, trainloader, 1, len(variance_schedule), variance_schedule) #C (num residual channels), num_blocks, trainloader, epochs, timesteps, variance_schedule
