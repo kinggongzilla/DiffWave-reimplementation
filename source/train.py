@@ -15,22 +15,23 @@ def train(C, num_blocks, trainloader, epochs, timesteps, variance_schedule, lr=1
 
     for epoch in range(epochs):
         for i, x in enumerate(trainloader):
-            x = x[0] #get waveform from tuple; batch size, channels, length
 
             optimizer.zero_grad()
 
-            #generate noise and noisy input for model Algorithm 1 Diffwave paper
-            noise = torch.randn(x.shape)
+            x = x[0] #get waveform from tuple; batch size, channels, length            
+            noise = torch.randn(x.shape) #generate noise and noisy input for model Algorithm 1 Diffwave paper
             t = torch.randint(1, timesteps, (1,))
+
             beta = variance_schedule[t]
             alpha = 1-beta
             alpha_t = alpha**t
             
             x = torch.sqrt(alpha_t)*x + torch.sqrt(1-alpha_t)*noise
+
             x.to(device)
             t.to(device)
-
             noise = noise.to(device)
+            
             y_pred = model.forward(x, t)
             loss_func = torch.nn.MSELoss(reduction='mean')
             loss = loss_func(y_pred, noise)
