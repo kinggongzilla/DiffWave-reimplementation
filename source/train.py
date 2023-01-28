@@ -1,12 +1,11 @@
 import torch
-import tqdm
 from source.model import DiffWave
 
 
 def train(C, num_blocks, trainloader, epochs, timesteps, variance_schedule, lr=1e-4):
 
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-
+    print(f'Using device: {device}')
     model = DiffWave(C, num_blocks, timesteps, variance_schedule)
     optimizer = torch.optim.Adam(model.parameters(), lr=lr)
 
@@ -25,13 +24,16 @@ def train(C, num_blocks, trainloader, epochs, timesteps, variance_schedule, lr=1
             beta = variance_schedule[t]
             alpha = 1-beta
             alpha_t = alpha**t
-            
-            x = torch.sqrt(alpha_t)*x + torch.sqrt(1-alpha_t)*noise
 
             x.to(device)
             t.to(device)
             noise = noise.to(device)
+            alpha_t.to(device)
             
+            x = torch.sqrt(alpha_t)*x + torch.sqrt(1-alpha_t)*noise
+
+
+
             y_pred = model.forward(x, t)
             loss_func = torch.nn.MSELoss(reduction='mean')
             loss = loss_func(y_pred, noise)

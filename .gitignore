@@ -5,5 +5,7 @@
 /chunked_audio
 /raw_samples
 /azure_test
+/.DS_Store
+/raw_data
 model.pt
 sample.wav
