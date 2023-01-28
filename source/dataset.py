@@ -5,6 +5,8 @@ import torch.nn.functional as F
 from torch.utils.data import Dataset
 import torchaudio
 
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
 class ChunkedMusDBHQ(Dataset):
 
     def __init__(self, audio_dir) -> None:
@@ -25,4 +27,4 @@ class ChunkedMusDBHQ(Dataset):
         
         waveform = waveform[0:1,:] #get single channel waveform from waveform with two channels; slicing [0:1] to preserve dimensions
 
-        return waveform, sample_rate
+        return waveform.to(device), sample_rate.to(device)

@@ -11,6 +11,8 @@ def train(C, num_blocks, trainloader, epochs, timesteps, variance_schedule, lr=1
     optimizer = torch.optim.Adam(model.parameters(), lr=lr)
 
     model.train()
+    model.to(device)
+
     for epoch in range(epochs):
         for i, x in enumerate(trainloader):
             x = x[0] #get waveform from tuple; batch size, channels, length
@@ -25,11 +27,8 @@ def train(C, num_blocks, trainloader, epochs, timesteps, variance_schedule, lr=1
             alpha_t = alpha**t
             
             x = torch.sqrt(alpha_t)*x + torch.sqrt(1-alpha_t)*noise
-            model.to(device)
-            x = x.to(device)
-            t = t.to(device)
-            noise = noise.to(device)
 
+            noise = noise.to(device)
             y_pred = model.forward(x, t)
             loss_func = torch.nn.MSELoss(reduction='mean')
             loss = loss_func(y_pred, noise)

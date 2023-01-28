@@ -26,6 +26,7 @@ class DiffWaveBlock(torch.nn.Module):
         t = self.fc_timestep(t)
         t = torch.broadcast_to(torch.unsqueeze(t,2), (x.shape[0], x.shape[1], x.shape[2])) #broadcast to length of audio input
         x = x + t #broadcast addition
+        del t
         x = self.conv_dilated(x)
         x_tanh, x_sigmoid = x.chunk(2, dim=1)
         x_tanh = torch.tanh(x_tanh)
@@ -66,7 +67,6 @@ class DiffWave(torch.nn.Module):
             torch.nn.Conv1d(residual_channels, residual_channels, 1), 
             torch.nn.Conv1d(residual_channels, 1, 1))
 
-
     def forward(self, x, t):
 
         #waveform input
@@ -83,8 +83,7 @@ class DiffWave(torch.nn.Module):
         for block in self.blocks:
             x = block(x, t)
             residual_results.append(x)
-        x = torch.sum(torch.stack(residual_results), dim=0) #TODO: check if this does the correct summation
-            
+        x = torch.sum(torch.stack(residual_results), dim=0) #TODO: check if this does the correct summation for residuals
         #out
         x = self.out(x)
         return x
