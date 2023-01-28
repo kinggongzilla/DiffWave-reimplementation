@@ -3,14 +3,14 @@ import tqdm
 from source.model import DiffWave
 
 
-def train(C, num_blocks, trainloader, epochs, timesteps, variance_schedule):
+def train(C, num_blocks, trainloader, epochs, timesteps, variance_schedule, lr=1e-4):
 
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
     model = DiffWave(C, num_blocks, timesteps, variance_schedule)
+    optimizer = torch.optim.Adam(model.parameters(), lr=lr)
 
     model.train()
-    optimizer = torch.optim.Adam(model.parameters(), lr=0.0001)
     for epoch in range(epochs):
         for i, x in enumerate(trainloader):
             x = x[0] #get waveform from tuple; batch size, channels, length
@@ -35,11 +35,9 @@ def train(C, num_blocks, trainloader, epochs, timesteps, variance_schedule):
             loss = loss_func(y_pred, noise)
             loss.backward()
             optimizer.step()
-            if i % 5 == 0:
+            if i % 100 == 0:
                 print(f'epoch: {epoch} | batch: {i} | loss: {loss.item()}')
         print(f'Epoch {epoch} DONE!')
 
-    
-    
     torch.save(model.state_dict(), 'model.pt')
     return model

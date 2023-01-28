@@ -4,21 +4,21 @@ import torch.nn.functional as F
 import torchaudio
 
 class DiffWaveBlock(torch.nn.Module):
-    def __init__(self, layer_index, C) -> None:
+    def __init__(self, layer_index, residual_channles) -> None:
         super().__init__()
         self.layer_index = layer_index
-        self.C = C #C are number of residual channels
+        self.residual_channels = residual_channles
         self.input = None
         self.x_skip = None
 
         # diffusion time step embedding
-        self.fc_timestep = torch.nn.Linear(512, C)
+        self.fc_timestep = torch.nn.Linear(512, residual_channles)
 
         #bi directional conv
-        self.conv_dilated = torch.nn.Conv1d(C, 2*C, 3, dilation=2**layer_index, padding='same')
+        self.conv_dilated = torch.nn.Conv1d(residual_channles, 2*residual_channles, 3, dilation=2**layer_index, padding='same')
 
-        self.conv_skip = torch.nn.Conv1d(C, C, 1)
-        self.conv_next = torch.nn.Conv1d(C, C, 1)
+        self.conv_skip = torch.nn.Conv1d(residual_channles, residual_channles, 1)
+        self.conv_next = torch.nn.Conv1d(residual_channles, residual_channles, 1)
 
     def forward(self, x, t):
 
@@ -37,7 +37,7 @@ class DiffWaveBlock(torch.nn.Module):
 
 
 class DiffWave(torch.nn.Module):
-    def __init__(self, C, num_blocks, timesteps, variance_schedule) -> None:
+    def __init__(self, residual_channels, num_blocks, timesteps, variance_schedule) -> None:
         super().__init__()
         self.timesteps = timesteps
         self.variance_schedule = variance_schedule
@@ -52,17 +52,17 @@ class DiffWave(torch.nn.Module):
         )
 
         self.waveform_in = torch.nn.Sequential(
-            torch.nn.Conv1d(1, C, 1),
+            torch.nn.Conv1d(1, residual_channels, 1),
             torch.nn.ReLU()
         )
 
         #blocks
         self.blocks = torch.nn.ModuleList()
         for i in range(num_blocks):
-            self.blocks.append(DiffWaveBlock(i, C))
+            self.blocks.append(DiffWaveBlock(i, residual_channels))
 
         #out
-        self.out = torch.nn.Sequential(torch.nn.Conv1d(C, C, 1), torch.nn.Conv1d(C, 1, 1))
+        self.out = torch.nn.Sequential(torch.nn.Conv1d(residual_channels, residual_channels, 1), torch.nn.Conv1d(residual_channels, 1, 1))
 
 
     def forward(self, x, t):

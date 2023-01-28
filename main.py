@@ -13,20 +13,26 @@ torch.cuda.empty_cache()
 
 #TODO: load dataset
 # path = os.path.join('data', 'chunked_audio')
-path = os.path.join('chunked_audio')
+data_path = os.path.join('chunked_audio')
 
 if len(sys.argv) > 1:
-        path = sys.argv[1]
+        data_path = sys.argv[1]
 
-chunked_data = ChunkedMusDBHQ(audio_dir=path)
+chunked_data = ChunkedMusDBHQ(audio_dir=data_path)
+
+#define variance schedule
+EPOCHS = 5
+BATCH_SIZE = 4
+LEARNING_RATE = 2 * 1e-4
+NUM_BLOCKS = 24
+RES_CHANNELS = 128
+TIME_STEPS = 50
+VARIANCE_SCHEDULE = torch.linspace(0.001, 0.05, TIME_STEPS)
 
 trainloader = torch.utils.data.DataLoader(
     chunked_data,
-    batch_size=4,
+    batch_size=BATCH_SIZE,
     shuffle=True,
     )
 
-#define variance schedule
-variance_schedule = torch.linspace(0.001, 0.05, 50)
-
-train(32, 10, trainloader, 1, len(variance_schedule), variance_schedule) #C (num residual channels), num_blocks, trainloader, epochs, timesteps, variance_schedule
+train(RES_CHANNELS, NUM_BLOCKS, trainloader, EPOCHS, TIME_STEPS, VARIANCE_SCHEDULE)
