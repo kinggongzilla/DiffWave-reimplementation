@@ -21,12 +21,14 @@ def train(C, num_blocks, trainloader, epochs, timesteps, variance_schedule, lr=1
 
             #generate noise and noisy input for model Algorithm 1 Diffwave paper
             noise = torch.randn(x.shape)
-            t = torch.randint(1, timesteps, (1,)).to(device)
+            t = torch.randint(1, timesteps, (1,))
             beta = variance_schedule[t]
             alpha = 1-beta
             alpha_t = alpha**t
             
             x = torch.sqrt(alpha_t)*x + torch.sqrt(1-alpha_t)*noise
+            x.to(device)
+            t.to(device)
 
             noise = noise.to(device)
             y_pred = model.forward(x, t)
