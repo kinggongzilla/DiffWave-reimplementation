@@ -26,7 +26,6 @@ class DiffWaveBlock(torch.nn.Module):
         t = self.fc_timestep(t)
         t = torch.broadcast_to(torch.unsqueeze(t,2), (x.shape[0], x.shape[1], x.shape[2])) #broadcast to length of audio input
         x = x + t #broadcast addition
-        del t
         x = self.conv_dilated(x)
         x_tanh, x_sigmoid = x.chunk(2, dim=1)
         x_tanh = torch.tanh(x_tanh)

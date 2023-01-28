@@ -27,4 +27,4 @@ class ChunkedMusDBHQ(Dataset):
         
         waveform = waveform[0:1,:] #get single channel waveform from waveform with two channels; slicing [0:1] to preserve dimensions
 
-        return waveform.to(device), sample_rate
+        return waveform, sample_rate
