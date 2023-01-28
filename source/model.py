@@ -62,7 +62,9 @@ class DiffWave(torch.nn.Module):
             self.blocks.append(DiffWaveBlock(i, residual_channels))
 
         #out
-        self.out = torch.nn.Sequential(torch.nn.Conv1d(residual_channels, residual_channels, 1), torch.nn.Conv1d(residual_channels, 1, 1))
+        self.out = torch.nn.Sequential(
+            torch.nn.Conv1d(residual_channels, residual_channels, 1), 
+            torch.nn.Conv1d(residual_channels, 1, 1))
 
 
     def forward(self, x, t):
@@ -102,7 +104,7 @@ class DiffWave(torch.nn.Module):
             x_t = torch.normal(mu, sd*torch.eye(mu.shape[0], mu.shape[1]))
             waveform = x_t[0].detach()
             path = "./sample.wav"
-            torchaudio.save(path, waveform, 44100)
+            torchaudio.save(path, waveform, 44100/4)
         return waveform
             
 
