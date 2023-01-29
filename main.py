@@ -21,11 +21,11 @@ if len(sys.argv) > 1:
 chunked_data = ChunkedMusDBHQ(audio_dir=data_path)
 
 #define variance schedule
-EPOCHS = 1
+EPOCHS = 5
 BATCH_SIZE = 4
 LEARNING_RATE = 2 * 1e-4
-NUM_BLOCKS = 10
-RES_CHANNELS = 32
+NUM_BLOCKS = 5
+RES_CHANNELS = 16
 TIME_STEPS = 50
 VARIANCE_SCHEDULE = torch.linspace(0.001, 0.05, TIME_STEPS)
 LAYER_WIDTH = 128
