@@ -27,8 +27,8 @@ def train(C, num_blocks, trainloader, epochs, timesteps, variance_schedule, lr=1
             
             x = torch.sqrt(alpha_t)*x + torch.sqrt(1-alpha_t)*noise
 
-            x.to(device)
-            t.to(device)
+            x = x.to(device)
+            t = t.to(device)
             noise = noise.to(device)
 
             y_pred = model.forward(x, t)
