@@ -105,7 +105,7 @@ class DiffWave(torch.nn.Module):
             x_t = torch.normal(mu, sd*torch.eye(mu.shape[0], mu.shape[1]))
             waveform = x_t[0].detach()
             path = "./sample.wav"
-            torchaudio.save(path, waveform, 44100/4)
+            torchaudio.save(path, waveform, 44100//2)
         return waveform
             
 
