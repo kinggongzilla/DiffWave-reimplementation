@@ -22,7 +22,7 @@ class ChunkedMusDBHQ(Dataset):
 
 
     def __len__(self):
-        return self.length
+        return self.length // 4
 
     def __getitem__(self, index):
         file = os.listdir(self.audio_dir)[index]

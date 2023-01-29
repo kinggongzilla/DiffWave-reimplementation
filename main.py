@@ -21,8 +21,8 @@ if len(sys.argv) > 1:
 chunked_data = ChunkedMusDBHQ(audio_dir=data_path)
 
 #define variance schedule
-EPOCHS = 5
-BATCH_SIZE = 4
+EPOCHS = 1
+BATCH_SIZE = 6
 LEARNING_RATE = 2 * 1e-4
 NUM_BLOCKS = 5
 RES_CHANNELS = 16
