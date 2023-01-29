@@ -24,8 +24,8 @@ chunked_data = ChunkedMusDBHQ(audio_dir=data_path)
 EPOCHS = 5
 BATCH_SIZE = 4
 LEARNING_RATE = 2 * 1e-4
-NUM_BLOCKS = 2
-RES_CHANNELS = 128
+NUM_BLOCKS = 4
+RES_CHANNELS = 32
 TIME_STEPS = 50
 VARIANCE_SCHEDULE = torch.linspace(0.001, 0.05, TIME_STEPS)
 
