@@ -7,6 +7,7 @@ import torchaudio
 from source.model import DiffWave
 from source.dataset import ChunkedMusDBHQ
 from source.train import train
+from source.model_constants import EPOCHS, BATCH_SIZE, LEARNING_RATE, NUM_BLOCKS, RES_CHANNELS, TIME_STEPS, VARIANCE_SCHEDULE, LAYER_WIDTH
 
 #clear cuda memory
 torch.cuda.empty_cache()
@@ -19,16 +20,6 @@ if len(sys.argv) > 1:
         data_path = sys.argv[1]
 
 chunked_data = ChunkedMusDBHQ(audio_dir=data_path)
-
-#define variance schedule
-EPOCHS = 5
-BATCH_SIZE = 4
-LEARNING_RATE = 2 * 1e-4
-NUM_BLOCKS = 5
-RES_CHANNELS = 16
-TIME_STEPS = 50
-VARIANCE_SCHEDULE = torch.linspace(0.001, 0.05, TIME_STEPS)
-LAYER_WIDTH = 128
 
 trainloader = torch.utils.data.DataLoader(
     chunked_data,
