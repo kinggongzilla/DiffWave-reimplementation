@@ -32,8 +32,12 @@ def train(C, num_blocks, trainloader, epochs, timesteps, variance_schedule, lr=1
             noise = noise.to(device)
 
             y_pred = model.forward(x, t)
+            del x
+            del t
             loss_func = torch.nn.MSELoss(reduction='mean')
             loss = loss_func(y_pred, noise)
+            del y_pred
+            del noise
             loss.backward()
             optimizer.step()
             if i % 100 == 0:
