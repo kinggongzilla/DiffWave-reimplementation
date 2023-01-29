@@ -14,7 +14,7 @@ def train(C, num_blocks, trainloader, epochs, timesteps, variance_schedule, lr=1
 
     for epoch in range(epochs):
         for i, x in enumerate(trainloader):
-
+            print(torch.cuda.memory_allocated())
             optimizer.zero_grad()
 
             x = x[0] #get waveform from tuple; batch size, channels, length            
