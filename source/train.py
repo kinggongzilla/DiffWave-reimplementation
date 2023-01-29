@@ -3,13 +3,12 @@ from tqdm import tqdm
 from source.model import DiffWave
 
 
-def train(C, num_blocks, trainloader, epochs, timesteps, variance_schedule, lr=1e-4):
+def train(model, optimizer, trainloader, epochs, timesteps, variance_schedule, lr=1e-4):
 
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+
     print(f'Using device: {device}')
-    model = DiffWave(C, num_blocks, timesteps, variance_schedule)
     print(f'Total number of parameters: {sum(param.numel() for param in model.parameters())}') #print number of parameters
-    optimizer = torch.optim.Adam(model.parameters(), lr=lr)
 
     model.train()
     model.to(device)

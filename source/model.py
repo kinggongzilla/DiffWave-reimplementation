@@ -4,15 +4,16 @@ import torch.nn.functional as F
 import torchaudio
 
 class DiffWaveBlock(torch.nn.Module):
-    def __init__(self, layer_index, residual_channles) -> None:
+    def __init__(self, layer_index, residual_channles, layer_width) -> None:
         super().__init__()
         self.layer_index = layer_index
         self.residual_channels = residual_channles
+        self.layer_width = layer_width
         self.input = None
         self.x_skip = None
 
         # diffusion time step embedding
-        self.fc_timestep = torch.nn.Linear(512, residual_channles)
+        self.fc_timestep = torch.nn.Linear(layer_width, residual_channles)
 
         #bi directional conv
         self.conv_dilated = torch.nn.Conv1d(residual_channles, 2*residual_channles, 3, dilation=2**layer_index, padding='same')
@@ -37,17 +38,18 @@ class DiffWaveBlock(torch.nn.Module):
 
 
 class DiffWave(torch.nn.Module):
-    def __init__(self, residual_channels, num_blocks, timesteps, variance_schedule) -> None:
+    def __init__(self, residual_channels, num_blocks, timesteps, variance_schedule, layer_width=512) -> None:
         super().__init__()
         self.timesteps = timesteps
         self.variance_schedule = variance_schedule
         self.num_blocks = num_blocks
+        self.layer_width = layer_width
 
         #in
         self.timestep_in = torch.nn.Sequential(
-            torch.nn.Linear(128, 512),
+            torch.nn.Linear(128, layer_width),
             torch.nn.SiLU(),
-            torch.nn.Linear(512, 512),
+            torch.nn.Linear(layer_width, layer_width),
             torch.nn.SiLU()
         )
 
@@ -59,7 +61,7 @@ class DiffWave(torch.nn.Module):
         #blocks
         self.blocks = torch.nn.ModuleList()
         for i in range(num_blocks):
-            self.blocks.append(DiffWaveBlock(i, residual_channels))
+            self.blocks.append(DiffWaveBlock(i, residual_channels, layer_width))
 
         #out
         self.out = torch.nn.Sequential(

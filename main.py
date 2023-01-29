@@ -4,7 +4,7 @@ import torch
 import torch.nn.functional as F
 from torch.utils.data import Dataset
 import torchaudio
-# from source.model import DiffWave
+from source.model import DiffWave
 from source.dataset import ChunkedMusDBHQ
 from source.train import train
 
@@ -24,10 +24,11 @@ chunked_data = ChunkedMusDBHQ(audio_dir=data_path)
 EPOCHS = 5
 BATCH_SIZE = 8
 LEARNING_RATE = 2 * 1e-4
-NUM_BLOCKS = 4
+NUM_BLOCKS = 5
 RES_CHANNELS = 32
 TIME_STEPS = 50
 VARIANCE_SCHEDULE = torch.linspace(0.001, 0.05, TIME_STEPS)
+LAYER_WIDTH = 128
 
 trainloader = torch.utils.data.DataLoader(
     chunked_data,
@@ -35,4 +36,7 @@ trainloader = torch.utils.data.DataLoader(
     shuffle=True,
     )
 
-train(RES_CHANNELS, NUM_BLOCKS, trainloader, EPOCHS, TIME_STEPS, VARIANCE_SCHEDULE)
+model = DiffWave(RES_CHANNELS, NUM_BLOCKS, TIME_STEPS, VARIANCE_SCHEDULE, LAYER_WIDTH)
+optimizer = torch.optim.Adam(model.parameters(), lr=LEARNING_RATE)
+
+train(model, optimizer,trainloader, EPOCHS, TIME_STEPS, VARIANCE_SCHEDULE)
