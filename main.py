@@ -12,9 +12,11 @@ from source.model_constants import EPOCHS, BATCH_SIZE, LEARNING_RATE, NUM_BLOCKS
 #clear cuda memory
 torch.cuda.empty_cache()
 
-#TODO: load dataset
-# path = os.path.join('data', 'chunked_audio')
-data_path = os.path.join('chunked_audio')
+#pass datapath as commandline argument
+if len(sys.argv) > 1:
+    data_path = sys.argv[1]
+else: 
+    data_path = os.path.join('chunked_audio')
 
 if len(sys.argv) > 1:
         data_path = sys.argv[1]
