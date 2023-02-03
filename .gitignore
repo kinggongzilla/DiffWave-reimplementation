@@ -1,3 +1,4 @@
+/wandb
 /data
 /.ipynb_checkpoints
 /source/__pycache__
@@ -10,3 +11,4 @@
 /raw_data
 model.pt
 sample.wav
+sample0.wav
