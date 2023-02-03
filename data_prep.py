@@ -1,7 +1,7 @@
 import os
 import sys
 from pydub import AudioSegment
-from source.model_constants import SAMPLE_RATE, SAMPLE_LENGTH_SECONDS
+from source.config import SAMPLE_RATE, SAMPLE_LENGTH_SECONDS
 #Note: ffmpeg package required for pydub
 
 #load data of one wav and split it into chunks

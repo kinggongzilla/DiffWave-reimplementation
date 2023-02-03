@@ -3,25 +3,37 @@ import sys
 import torch
 import torch.nn.functional as F
 from torch.utils.data import Dataset
-import torchaudio
+import wandb
 from source.model import DiffWave
 from source.dataset import ChunkedMusDBHQ
 from source.train import train
-from source.model_constants import EPOCHS, BATCH_SIZE, LEARNING_RATE, NUM_BLOCKS, RES_CHANNELS, TIME_STEPS, VARIANCE_SCHEDULE, LAYER_WIDTH
+from source.config import EPOCHS, BATCH_SIZE, LEARNING_RATE, NUM_BLOCKS, RES_CHANNELS, TIME_STEPS, VARIANCE_SCHEDULE, LAYER_WIDTH, SAMPLE_RATE, MAX_SAMPLES
 
 #clear cuda memory
 torch.cuda.empty_cache()
 
 data_path = os.path.join('chunked_audio')
-max_samples = None
 
 #example: python main.py path/to/data 20000
 if len(sys.argv) > 1:
     data_path = sys.argv[1]
-if len(sys.argv) > 2:
-    max_samples = int(sys.argv[2])    
 
-chunked_data = ChunkedMusDBHQ(audio_dir=data_path, max_samples=max_samples)
+
+wandb.init(project="DiffWave", entity="daavidhauser")
+
+wandb.config = {
+    "learning_rate": LEARNING_RATE,
+    "epochs": EPOCHS,
+    "batch_size": BATCH_SIZE,
+    "num_blocks": NUM_BLOCKS,
+    "res_channels": RES_CHANNELS,
+    "time_steps": TIME_STEPS,
+    "variance_schedule": VARIANCE_SCHEDULE,
+    "layer_width": LAYER_WIDTH,
+    "sample_rate": SAMPLE_RATE
+} 
+
+chunked_data = ChunkedMusDBHQ(audio_dir=data_path, max_samples=MAX_SAMPLES)
 
 trainloader = torch.utils.data.DataLoader(
     chunked_data,

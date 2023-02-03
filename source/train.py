@@ -2,7 +2,7 @@ import torch
 from tqdm import tqdm
 from source.model import DiffWave
 import wandb
-from source.model_constants import EPOCHS, BATCH_SIZE, LEARNING_RATE, NUM_BLOCKS, RES_CHANNELS, TIME_STEPS, VARIANCE_SCHEDULE, LAYER_WIDTH, SAMPLE_RATE
+from source.config import EPOCHS, BATCH_SIZE, LEARNING_RATE, NUM_BLOCKS, RES_CHANNELS, TIME_STEPS, VARIANCE_SCHEDULE, LAYER_WIDTH, SAMPLE_RATE, SAMPLE_LENGTH_SECONDS
 
 wandb.init(project="DiffWave", entity="daavidhauser")
 
@@ -15,7 +15,8 @@ wandb.config = {
     "time_steps": TIME_STEPS,
     "variance_schedule": VARIANCE_SCHEDULE,
     "layer_width": LAYER_WIDTH,
-    "sample_rate": SAMPLE_RATE
+    "sample_rate": SAMPLE_RATE,
+    "sample_length_seconds": SAMPLE_LENGTH_SECONDS,
 }
 
 def train(model, optimizer, trainloader, epochs, timesteps, variance_schedule, lr=1e-4):

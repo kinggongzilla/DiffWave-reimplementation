@@ -3,7 +3,7 @@ import sys
 import torch
 import torchaudio
 from source.model import DiffWave
-from source.model_constants import NUM_BLOCKS, RES_CHANNELS, TIME_STEPS, VARIANCE_SCHEDULE, LAYER_WIDTH, SAMPLE_RATE, SAMPLE_LENGTH_SECONDS
+from source.config import NUM_BLOCKS, RES_CHANNELS, TIME_STEPS, VARIANCE_SCHEDULE, LAYER_WIDTH, SAMPLE_RATE, SAMPLE_LENGTH_SECONDS
 
 model_path = "outputs/models/model.pt"
 

@@ -11,3 +11,4 @@ VARIANCE_SCHEDULE = torch.linspace(10e-4, 0.02, TIME_STEPS) #???
 LAYER_WIDTH = 128 #512
 SAMPLE_RATE = 16000 #44100 #22050
 SAMPLE_LENGTH_SECONDS = 5
+MAX_SAMPLES = 10000 # None for all samples in data input folder
