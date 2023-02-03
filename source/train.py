@@ -58,6 +58,8 @@ def train(model, optimizer, trainloader, epochs, timesteps, variance_schedule, l
             optimizer.step()
             epoch_loss += float(batch_loss.item())
             wandb.log({"batch_loss": batch_loss})
+            #log memory usage in Mb to wandb
+            wandb.log({"memoryin GB": torch.cuda.memory_allocated() / 1024**3})
         print(f'epoch: {epoch} | loss: {epoch_loss/len(trainloader)}')
         wandb.log({"epoch_loss": epoch_loss})
 
