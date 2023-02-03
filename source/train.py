@@ -4,9 +4,10 @@ from source.model import DiffWave
 import wandb
 from source.config import EPOCHS, BATCH_SIZE, LEARNING_RATE, NUM_BLOCKS, RES_CHANNELS, TIME_STEPS, VARIANCE_SCHEDULE, LAYER_WIDTH, SAMPLE_RATE, SAMPLE_LENGTH_SECONDS
 
-wandb.init(project="DiffWave", entity="daavidhauser")
-
-wandb.config = {
+wandb.init(
+    project="DiffWave", 
+    entity="daavidhauser",
+    config = {
     "learning_rate": LEARNING_RATE,
     "epochs": EPOCHS,
     "batch_size": BATCH_SIZE,
@@ -17,7 +18,8 @@ wandb.config = {
     "layer_width": LAYER_WIDTH,
     "sample_rate": SAMPLE_RATE,
     "sample_length_seconds": SAMPLE_LENGTH_SECONDS,
-}
+    }
+)
 
 def train(model, optimizer, trainloader, epochs, timesteps, variance_schedule, lr=1e-4):
 
@@ -59,8 +61,6 @@ def train(model, optimizer, trainloader, epochs, timesteps, variance_schedule, l
             optimizer.step()
             epoch_loss += float(batch_loss.item())
             wandb.log({"batch_loss": batch_loss})
-            #log memory usage in Mb to wandb
-            wandb.log({"memoryin GB": torch.cuda.memory_allocated() / 1024**3})
         print(f'epoch: {epoch} | loss: {epoch_loss/len(trainloader)}')
         wandb.log({"epoch_loss": epoch_loss})
 
