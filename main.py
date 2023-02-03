@@ -12,13 +12,16 @@ from source.model_constants import EPOCHS, BATCH_SIZE, LEARNING_RATE, NUM_BLOCKS
 #clear cuda memory
 torch.cuda.empty_cache()
 
-#pass datapath as commandline argument
+data_path = os.path.join('chunked_audio')
+max_samples = None
+
+#example: python main.py path/to/data 20000
 if len(sys.argv) > 1:
     data_path = sys.argv[1]
-else: 
-    data_path = os.path.join('chunked_audio')
+if len(sys.argv) > 2:
+    max_samples = int(sys.argv[2])    
 
-chunked_data = ChunkedMusDBHQ(audio_dir=data_path)
+chunked_data = ChunkedMusDBHQ(audio_dir=data_path, max_samples=max_samples)
 
 trainloader = torch.utils.data.DataLoader(
     chunked_data,
