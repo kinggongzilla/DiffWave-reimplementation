@@ -4,6 +4,7 @@ import torch
 import torch.nn.functional as F
 from torch.utils.data import Dataset
 import torchaudio
+from source.model_constants import SAMPLE_RATE
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
@@ -27,7 +28,8 @@ class ChunkedMusDBHQ(Dataset):
     def __getitem__(self, index):
         file = os.listdir(self.audio_dir)[index]
         waveform, sample_rate = torchaudio.load(os.path.join(self.audio_dir, file))
-        
+        if sample_rate > SAMPLE_RATE:
+            waveform = torchaudio.functional.resample(waveform, orig_freq=sample_rate, new_freq=SAMPLE_RATE)
         waveform = waveform[0:1,:] #get single channel waveform from waveform with two channels; slicing [0:1] to preserve dimensions
 
-        return waveform, sample_rate
+        return waveform, SAMPLE_RATE
