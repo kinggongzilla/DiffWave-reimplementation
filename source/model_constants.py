@@ -1,7 +1,7 @@
 import torch
 
 # params used in DiffWave paper for unconditional training in comments below
-EPOCHS = 100
+EPOCHS = 1000
 BATCH_SIZE = 8 #16
 LEARNING_RATE = 1e-3 #2 * 1e-4
 NUM_BLOCKS = 5 #36
