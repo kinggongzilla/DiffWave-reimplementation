@@ -9,4 +9,4 @@ A custom DiffWave implementation I am doing in the course of the Practical Work 
 4. Run "python main.py [path to data_folder]"
 
 
-data_folder should be one folder containing .mp3 files.
+data_folder should be one folder containing .mp3 files of equal length.
