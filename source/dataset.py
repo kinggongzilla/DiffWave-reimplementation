@@ -9,9 +9,9 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 class ChunkedMusDBHQ(Dataset):
 
-    def __init__(self, audio_dir) -> None:
+    def __init__(self, audio_dir, max_samples=None) -> None:
         self.audio_dir = audio_dir
-
+        self.max_samples = max_samples
         count = 0
         # Iterate directory
         for path in os.listdir(self.audio_dir):
@@ -22,7 +22,7 @@ class ChunkedMusDBHQ(Dataset):
 
 
     def __len__(self):
-        return self.length // 4
+        return self.length[:self.max_samples]
 
     def __getitem__(self, index):
         file = os.listdir(self.audio_dir)[index]

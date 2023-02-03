@@ -18,9 +18,6 @@ if len(sys.argv) > 1:
 else: 
     data_path = os.path.join('chunked_audio')
 
-if len(sys.argv) > 1:
-        data_path = sys.argv[1]
-
 chunked_data = ChunkedMusDBHQ(audio_dir=data_path)
 
 trainloader = torch.utils.data.DataLoader(
