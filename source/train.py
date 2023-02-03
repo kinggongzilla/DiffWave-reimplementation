@@ -1,7 +1,22 @@
 import torch
 from tqdm import tqdm
 from source.model import DiffWave
+import wandb
+from source.model_constants import EPOCHS, BATCH_SIZE, LEARNING_RATE, NUM_BLOCKS, RES_CHANNELS, TIME_STEPS, VARIANCE_SCHEDULE, LAYER_WIDTH, SAMPLE_RATE
 
+wandb.init(project="DiffWave", entity="daavidhauser")
+
+wandb.config = {
+    "learning_rate": LEARNING_RATE,
+    "epochs": EPOCHS,
+    "batch_size": BATCH_SIZE,
+    "num_blocks": NUM_BLOCKS,
+    "res_channels": RES_CHANNELS,
+    "time_steps": TIME_STEPS,
+    "variance_schedule": VARIANCE_SCHEDULE,
+    "layer_width": LAYER_WIDTH,
+    "sample_rate": SAMPLE_RATE
+}
 
 def train(model, optimizer, trainloader, epochs, timesteps, variance_schedule, lr=1e-4):
 
@@ -36,13 +51,16 @@ def train(model, optimizer, trainloader, epochs, timesteps, variance_schedule, l
             del x
             del t
             loss_func = torch.nn.MSELoss(reduction='mean')
-            loss = loss_func(y_pred, noise)
+            batch_loss = loss_func(y_pred, noise)
             del y_pred
             del noise
-            loss.backward()
+            batch_loss.backward()
             optimizer.step()
-            epoch_loss += float(loss.item())
+            epoch_loss += float(batch_loss.item())
+            wandb.log({"batch_loss": batch_loss})
         print(f'epoch: {epoch} | loss: {epoch_loss/len(trainloader)}')
+        wandb.log({"epoch_loss": epoch_loss})
+
 
     torch.save(model.state_dict(), 'outputs/models/model.pt')
     return model
