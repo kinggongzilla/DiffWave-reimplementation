@@ -1,7 +1,8 @@
 /data
 /.ipynb_checkpoints
 /source/__pycache__
-/outputs
+/outputs/models/*
+/outputs/samples/*
 /chunked_audio
 /raw_samples
 /azure_test

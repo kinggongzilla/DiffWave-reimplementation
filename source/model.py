@@ -2,6 +2,7 @@ import math
 import torch
 import torch.nn.functional as F
 import torchaudio
+from tqdm import tqdm
 
 class DiffWaveBlock(torch.nn.Module):
     def __init__(self, layer_index, residual_channles, layer_width) -> None:
@@ -78,13 +79,12 @@ class DiffWave(torch.nn.Module):
 
         t = self.timestep_in(t)
 
-        residual_results = []
+        residual_sum = torch.empty_like(x)
 
         #blocks
         for block in self.blocks:
             x = block(x, t)
-            residual_results.append(x)
-        x = torch.sum(torch.stack(residual_results), dim=0) #TODO: check if this does the correct summation for residuals
+            residual_sum += block.x_skip
 
         #out
         x = self.out(x)
@@ -92,21 +92,19 @@ class DiffWave(torch.nn.Module):
 
 
     def sample(self, x_t):
-        for t in reversed(range(1, self.timesteps)):
-            y_pred = self.forward(x_t, t)
-            beta = self.variance_schedule[t]
-            alpha = 1-beta
-            alpha_t = alpha**t
-            beta_t = (1-(alpha_t/alpha))/(1-alpha_t) * beta
+        with torch.no_grad():
+            for t in tqdm(reversed(range(1, self.timesteps))):
+                y_pred = self.forward(x_t, t)
+                beta = self.variance_schedule[t]
+                alpha = 1-beta
+                alpha_t = alpha**t
+                beta_t = (1-(alpha_t/alpha))/(1-alpha_t) * beta
 
-            mu = 1/torch.sqrt(alpha) * (x_t - (beta/torch.sqrt(1-alpha_t)*y_pred))
-            sd = torch.sqrt(beta_t)
+                mu = 1/torch.sqrt(alpha) * (x_t - (beta/torch.sqrt(1-alpha_t)*y_pred))
+                sd = torch.sqrt(beta_t)
 
-            x_t = torch.normal(mu, sd*torch.eye(mu.shape[0], mu.shape[1]))
-            waveform = x_t[0].detach()
-            path = "./sample.wav"
-            torchaudio.save(path, waveform, 44100//2)
-        return waveform
+                x_t = torch.normal(mu, sd*torch.eye(mu.shape[0], mu.shape[1]))
+        return x_t
             
 
     def embed_timestep(self, t, batch_size=1):

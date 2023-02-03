@@ -44,5 +44,5 @@ def train(model, optimizer, trainloader, epochs, timesteps, variance_schedule, l
             epoch_loss += float(loss.item())
         print(f'epoch: {epoch} | loss: {epoch_loss/len(trainloader)}')
 
-    torch.save(model.state_dict(), 'model.pt')
+    torch.save(model.state_dict(), 'outputs/models/model.pt')
     return model
