@@ -113,10 +113,9 @@ class DiffWave(torch.nn.Module):
 
 
             for n in range(len(alpha) - 1, -1, -1):
-                t = self.embed_timestep(t).to(x_t.device)
                 c1 = 1 / alpha[n]**0.5
                 c2 = beta[n] / (1 - alpha_cum[n])**0.5
-                x_t = c1 * (x_t - c2 * self.forward(x_t, t).squeeze(1))
+                x_t = c1 * (x_t - c2 * self.forward(x_t, n).squeeze(1))
                 if n > 0:
                     noise = torch.randn_like(x_t)
                     sigma = ((1.0 - alpha_cum[n-1]) / (1.0 - alpha_cum[n]) * beta[n])**0.5
