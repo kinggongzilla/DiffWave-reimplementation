@@ -3,6 +3,7 @@ import torch
 import torch.nn.functional as F
 import torchaudio
 from tqdm import tqdm
+import numpy as np
 
 class DiffWaveBlock(torch.nn.Module):
     def __init__(self, layer_index, residual_channles, layer_width) -> None:
@@ -93,18 +94,35 @@ class DiffWave(torch.nn.Module):
 
     def sample(self, x_t):
         with torch.no_grad():
-            for t in tqdm(reversed(range(1, self.timesteps))):
-                y_pred = self.forward(x_t, t)
-                beta = self.variance_schedule[t]
-                alpha = 1-beta
-                alpha_t = alpha**t
-                beta_t = (1-(alpha_t/alpha))/(1-alpha_t) * beta
 
-                mu = 1/torch.sqrt(alpha) * (x_t - (beta/torch.sqrt(1-alpha_t)*y_pred))
-                sd = torch.sqrt(beta_t)
+            talpha = 1 - self.variance_schedule
+            talpha_cum = np.cumprod(talpha)
 
-                x_t = torch.normal(mu, sd*torch.eye(mu.shape[0], mu.shape[1]))
-        return x_t
+            beta = self.variance_schedule
+            alpha = 1 - beta
+            alpha_cum = np.cumprod(alpha)
+
+            T = []
+            for s in range(len(self.variance_schedule)):
+                for t in range(len(self.variance_schedule) - 1):
+                    if talpha_cum[t+1] <= alpha_cum[s] <= talpha_cum[t]:
+                        twiddle = (talpha_cum[t]**0.5 - alpha_cum[s]**0.5) / (talpha_cum[t]**0.5 - talpha_cum[t+1]**0.5)
+                        T.append(t + twiddle)
+                        break
+                T = np.array(T, dtype=np.float32)
+
+
+            for n in range(len(alpha) - 1, -1, -1):
+                t = self.embed_timestep(t).to(x_t.device)
+                c1 = 1 / alpha[n]**0.5
+                c2 = beta[n] / (1 - alpha_cum[n])**0.5
+                x_t = c1 * (x_t - c2 * self.forward(x_t, t).squeeze(1))
+                if n > 0:
+                    noise = torch.randn_like(x_t)
+                    sigma = ((1.0 - alpha_cum[n-1]) / (1.0 - alpha_cum[n]) * beta[n])**0.5
+                    x_t += sigma * noise
+                x_t = torch.clamp(x_t, -1.0, 1.0)
+        return x_t 
             
 
     def embed_timestep(self, t, batch_size=1):
