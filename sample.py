@@ -21,3 +21,4 @@ y = model.sample(noise)
 for i in range(y.shape[0]): #for each sample in batch
     path = os.path.join("output/samples", f"sample{i}.wav")
     torchaudio.save(path, y[i], SAMPLE_RATE)
+    print('Saved sample to', path)
