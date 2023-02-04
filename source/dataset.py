@@ -23,7 +23,7 @@ class ChunkedMusDBHQ(Dataset):
 
 
     def __len__(self):
-        return self.length if self.max_samples is None else self.max_samples
+        return self.length if self.max_samples is None or self.max_samples > self.length else self.max_samples
 
     def __getitem__(self, index):
         file = os.listdir(self.audio_dir)[index]
