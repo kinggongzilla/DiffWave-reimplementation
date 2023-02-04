@@ -109,7 +109,7 @@ class DiffWave(torch.nn.Module):
                         twiddle = (talpha_cum[t]**0.5 - alpha_cum[s]**0.5) / (talpha_cum[t]**0.5 - talpha_cum[t+1]**0.5)
                         T.append(t + twiddle)
                         break
-                T = np.array(T, dtype=np.float32)
+            T = np.array(T, dtype=np.float32)
 
 
             for n in range(len(alpha) - 1, -1, -1):
