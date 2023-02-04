@@ -62,7 +62,7 @@ def train(model, optimizer, trainloader, epochs, timesteps, variance_schedule, l
             epoch_loss += float(batch_loss.item())
             wandb.log({"batch_loss": batch_loss})
         print(f'epoch: {epoch} | loss: {epoch_loss/len(trainloader)}')
-        wandb.log({"epoch_loss": epoch_loss})
+        wandb.log({"epoch_loss": epoch_loss/len(trainloader)})
 
 
     torch.save(model.state_dict(), 'output/models/model.pt')
