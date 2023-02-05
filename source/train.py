@@ -30,7 +30,7 @@ def train(model, optimizer, trainloader, epochs, timesteps, variance_schedule, l
 
     model.train()
     model.to(device)
-
+    best_loss = 999999999999
     for epoch in range(epochs):
         epoch_loss = 0
         for x in tqdm(trainloader):
@@ -61,8 +61,12 @@ def train(model, optimizer, trainloader, epochs, timesteps, variance_schedule, l
             optimizer.step()
             epoch_loss += float(batch_loss.item())
             wandb.log({"batch_loss": batch_loss})
-        print(f'epoch: {epoch} | loss: {epoch_loss/len(trainloader)}')
-        wandb.log({"epoch_loss": epoch_loss/len(trainloader)})
+        epoch_loss = epoch_loss/len(trainloader)
+        if epoch_loss < best_loss:
+            best_loss = epoch_loss
+            torch.save(model.state_dict(), 'output/models/best_model.pt')
+        print(f'epoch: {epoch} | loss: {epoch_loss}')
+        wandb.log({"epoch_loss": epoch_loss})
 
 
     torch.save(model.state_dict(), 'output/models/model.pt')

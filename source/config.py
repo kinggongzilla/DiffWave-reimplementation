@@ -11,7 +11,7 @@ TIME_STEPS = 50 #200
 VARIANCE_SCHEDULE = torch.linspace(10e-4, 0.05, TIME_STEPS) #torch.linspace(10e-4, 0.05, TIME_STEPS)
 SAMPLE_RATE = 16000 #44100 #22050
 SAMPLE_LENGTH_SECONDS = 5
-MAX_SAMPLES = 7000 # None for all samples in data input folder
+MAX_SAMPLES = None # None for all samples in data input folder
 
 
 # local config for laptop for debugging locally
