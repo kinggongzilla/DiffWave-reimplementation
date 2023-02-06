@@ -31,9 +31,14 @@ def train(model, optimizer, trainloader, epochs, timesteps, variance_schedule, l
     model.train()
     model.to(device)
     best_loss = 999999999999
+    
+    step_count = 0
+    step_loss = 0
+    best_step_loss = 999999999999
     for epoch in range(epochs):
         epoch_loss = 0
-        for x in tqdm(trainloader):
+        for i, x in tqdm(enumerate(trainloader)):
+            step_count += 1
             optimizer.zero_grad()
 
             x = x[0] #get waveform from tuple; batch size, channels, length            
@@ -60,7 +65,18 @@ def train(model, optimizer, trainloader, epochs, timesteps, variance_schedule, l
             batch_loss.backward()
             optimizer.step()
             epoch_loss += float(batch_loss.item())
+            step_loss += float(batch_loss.item())
             wandb.log({"batch_loss": batch_loss})
+
+            #step loss is logged and model saved every 500 steps, so runs with batch size 1 and many, many epochs can be monitored better
+            if step_count % 500 == 0:
+                wandb.log({"500_step_loss": step_loss/500})
+                if best_step_loss > step_loss/500:
+                    best_step_loss = step_loss/500
+                    torch.save(model.state_dict(), 'output/models/best_500_step_model.pt')
+                step_loss = 0
+                torch.save(model.state_dict(), 'output/models/model{step_count}.pt')
+
         epoch_loss = epoch_loss/len(trainloader)
         if epoch_loss < best_loss:
             best_loss = epoch_loss
