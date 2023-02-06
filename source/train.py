@@ -31,7 +31,7 @@ def train(model, optimizer, trainloader, epochs, timesteps, variance_schedule, l
     model.train()
     model.to(device)
     best_loss = 999999999999
-    
+
     step_count = 0
     step_loss = 0
     best_step_loss = 999999999999
@@ -75,7 +75,6 @@ def train(model, optimizer, trainloader, epochs, timesteps, variance_schedule, l
                     best_step_loss = step_loss/500
                     torch.save(model.state_dict(), 'output/models/best_500_step_model.pt')
                 step_loss = 0
-                torch.save(model.state_dict(), 'output/models/model{step_count}.pt')
 
         epoch_loss = epoch_loss/len(trainloader)
         if epoch_loss < best_loss:
