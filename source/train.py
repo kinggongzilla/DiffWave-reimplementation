@@ -37,7 +37,7 @@ def train(model, optimizer, trainloader, epochs, timesteps, variance_schedule, l
     best_step_loss = 999999999999
     for epoch in range(epochs):
         epoch_loss = 0
-        for i, x in tqdm(enumerate(trainloader)):
+        for x in tqdm(trainloader):
             step_count += 1
             optimizer.zero_grad()
 
