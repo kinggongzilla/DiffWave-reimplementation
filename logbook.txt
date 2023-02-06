@@ -1,0 +1,16 @@
+Practical work stuff I tried:
+
+1. Learn one single 5 second sine wave:
+Result: After 10k steps, inference was still noisy but one could clearly hear the sine wave
+
+2. Train on 7k samples for 20 Epochs
+Result: Only noise when sampling. Loss constant after 10 epochs
+
+3. Train on one single 5 second sample
+loss constant after first 1000 steps
+
+4. Train on sine wave for 15k steps
+works reasonably well. Loss stays roughly the same for last 3.5k steps.
+Audio is still noisy but one can clearly hear the sine wave.
+
+5. Train on whole 150k samples for one epoch
