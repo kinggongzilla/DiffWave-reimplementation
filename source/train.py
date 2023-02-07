@@ -1,4 +1,5 @@
 import torch
+import numpy as np
 from tqdm import tqdm
 from source.model import DiffWave
 import wandb
@@ -26,7 +27,9 @@ def train(model, optimizer, trainloader, epochs, timesteps, variance_schedule, l
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
     print(f'Using device: {device}')
-    print(f'Total number of parameters: {sum(param.numel() for param in model.parameters())}') #print number of parameters
+    model_parameters = filter(lambda p: p.requires_grad, model.parameters())
+    params = sum([np.prod(p.size()) for p in model_parameters])
+    print(f'Total number of parameters: {params}') #print number of parameters
 
     model.train()
     model.to(device)

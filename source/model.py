@@ -6,7 +6,7 @@ from tqdm import tqdm
 import numpy as np
 
 class DiffWaveBlock(torch.nn.Module):
-    def __init__(self, layer_index, residual_channles, layer_width) -> None:
+    def __init__(self, layer_index, residual_channles, layer_width, dilation_mod) -> None:
         super().__init__()
         self.layer_index = layer_index
         self.residual_channels = residual_channles
@@ -18,7 +18,7 @@ class DiffWaveBlock(torch.nn.Module):
         self.fc_timestep = torch.nn.Linear(layer_width, residual_channles)
 
         #bi directional conv
-        self.conv_dilated = torch.nn.Conv1d(residual_channles, 2*residual_channles, 3, dilation=2**layer_index, padding='same')
+        self.conv_dilated = torch.nn.Conv1d(residual_channles, 2*residual_channles, 3, dilation=2**(layer_index%dilation_mod), padding='same')
 
         self.conv_skip = torch.nn.Conv1d(residual_channles, residual_channles, 1)
         self.conv_next = torch.nn.Conv1d(residual_channles, residual_channles, 1)
@@ -40,7 +40,7 @@ class DiffWaveBlock(torch.nn.Module):
 
 
 class DiffWave(torch.nn.Module):
-    def __init__(self, residual_channels, num_blocks, timesteps, variance_schedule, layer_width=512) -> None:
+    def __init__(self, residual_channels, num_blocks, timesteps, variance_schedule, layer_width=512, dilation_mod=12) -> None:
         super().__init__()
         self.timesteps = timesteps
         self.variance_schedule = variance_schedule
@@ -63,7 +63,7 @@ class DiffWave(torch.nn.Module):
         #blocks
         self.blocks = torch.nn.ModuleList()
         for i in range(num_blocks):
-            self.blocks.append(DiffWaveBlock(i, residual_channels, layer_width))
+            self.blocks.append(DiffWaveBlock(i, residual_channels, layer_width, dilation_mod=dilation_mod))
 
         #out
         self.out = torch.nn.Sequential(
