@@ -1,7 +1,7 @@
 import torch
 
 # params used in DiffWave paper for unconditional training in comments below
-EPOCHS = 20
+EPOCHS = 100
 BATCH_SIZE = 8 #16
 LEARNING_RATE = 2 * 1e-4
 NUM_BLOCKS = 20 #36
@@ -11,7 +11,7 @@ TIME_STEPS = 200 #200
 VARIANCE_SCHEDULE = torch.linspace(10e-4, 0.05, TIME_STEPS) #torch.linspace(10e-4, 0.05, TIME_STEPS)
 SAMPLE_RATE = 8000 #16000 #22050 #44100
 SAMPLE_LENGTH_SECONDS = 4
-MAX_SAMPLES = 9000 # 9000 =10h; Use "None" for all samples in data input folder
+MAX_SAMPLES = 4500 # Use "None" for all samples in data input folder
 
 
 # local config for laptop for debugging locally
