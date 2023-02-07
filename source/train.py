@@ -3,7 +3,7 @@ import numpy as np
 from tqdm import tqdm
 from source.model import DiffWave
 import wandb
-from source.config import EPOCHS, BATCH_SIZE, LEARNING_RATE, NUM_BLOCKS, RES_CHANNELS, TIME_STEPS, VARIANCE_SCHEDULE, LAYER_WIDTH, SAMPLE_RATE, SAMPLE_LENGTH_SECONDS
+from source.config import EPOCHS, BATCH_SIZE, LEARNING_RATE, NUM_BLOCKS, RES_CHANNELS, TIME_STEPS, VARIANCE_SCHEDULE, TIMESTEP_LAYER_WIDTH, SAMPLE_RATE, SAMPLE_LENGTH_SECONDS
 
 wandb.init(
     project="DiffWave", 
@@ -16,7 +16,7 @@ wandb.init(
     "res_channels": RES_CHANNELS,
     "time_steps": TIME_STEPS,
     "variance_schedule": VARIANCE_SCHEDULE,
-    "layer_width": LAYER_WIDTH,
+    "layer_width": TIMESTEP_LAYER_WIDTH,
     "sample_rate": SAMPLE_RATE,
     "sample_length_seconds": SAMPLE_LENGTH_SECONDS,
     }
