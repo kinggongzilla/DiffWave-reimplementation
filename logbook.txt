@@ -16,6 +16,6 @@ Audio is still noisy but one can clearly hear the sine wave.
 5. Train on whole 150k samples for one epoch
 Loss stopped going down after first 10k steps (out of 20k). Produces only noise with some rythmic sound artefacts
 
-6. Train on 1 second samples and generate 1 second samples to make it easier for the network to learn. 
-I chunked the raw_data into 1 second audio snippets. In the paper they trained on 8.7h of audio for unconditional generation. 
-My model is 1/10th the size of the one in the paper so I will train on 8.7h/10 = 54 minutes of audi ~ 3240 samples. I will train for 15 epochs.
+6. Train on 4 second samples at 8Khz sample rate and generate 4 second samples to make it easier for the network to learn. 
+I chunked the raw_data into 4 second audio snippets. In the paper they trained on 8.7h of audio for unconditional generation. 
+Since I am using a lower sample rate and shorter samples, I can make the model bigger without running into memory issues.
