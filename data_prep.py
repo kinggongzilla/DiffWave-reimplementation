@@ -89,7 +89,7 @@ if __name__ == '__main__':
     #loop over files in audio_folder_path
     for i, file in enumerate(os.listdir(in_path)):
         #break if max samples reached
-        if os.listdir(chopped_audio_out_path) >= (MAX_SAMPLES-1):
+        if len(os.listdir(chopped_audio_out_path)) >= (MAX_SAMPLES-1):
             break
         chop_wav(i, os.path.join(in_path, file), chopped_audio_out_path, sample_length)
 
