@@ -1,7 +1,7 @@
 import os
 import sys
 from pydub import AudioSegment
-from source.config import SAMPLE_RATE, SAMPLE_LENGTH_SECONDS, WINDOW_LENGTH, HOP_LENGTH, N_FFT, N_MELS, FMIN, FMAX, POWER, NORMALIZED, N_FFT, N_MELS, FMIN, FMAX, POWER, NORMALIZED, FMIN, FMAX, POWER, NORMALIZED
+from source.config import MAX_SAMPLES, SAMPLE_RATE, SAMPLE_LENGTH_SECONDS, WINDOW_LENGTH, HOP_LENGTH, N_FFT, N_MELS, FMIN, FMAX, POWER, NORMALIZED, N_FFT, N_MELS, FMIN, FMAX, POWER, NORMALIZED, FMIN, FMAX, POWER, NORMALIZED
 import torchaudio
 import numpy as np
 import torch
@@ -88,6 +88,9 @@ if __name__ == '__main__':
 
     #loop over files in audio_folder_path
     for i, file in enumerate(os.listdir(in_path)):
+        #break if max samples reached
+        if os.listdir(chopped_audio_out_path) >= (MAX_SAMPLES-1):
+            break
         chop_wav(i, os.path.join(in_path, file), chopped_audio_out_path, sample_length)
 
     #generate mel spectrograms from chopped audio
