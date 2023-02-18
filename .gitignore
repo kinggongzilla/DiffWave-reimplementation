@@ -1,6 +1,7 @@
 /models
 /wandb
-/data
+/data/chunked_audio
+/data/mel_spectrograms
 /.ipynb_checkpoints
 /source/__pycache__
 /chunked_audio

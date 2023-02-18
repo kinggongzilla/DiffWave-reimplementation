@@ -13,7 +13,7 @@ if len(sys.argv) > 1:
 
 
 model = DiffWave(RES_CHANNELS, NUM_BLOCKS, TIME_STEPS, VARIANCE_SCHEDULE, TIMESTEP_LAYER_WIDTH)
-model.load_state_dict(torch.load(model_path))
+model.load_state_dict(torch.load(model_path, map_location=device))
 model.eval()
 
 noise = torch.randn(1, 1, SAMPLE_RATE*SAMPLE_LENGTH_SECONDS) # batch_size, n_channels, sample length e.g. 22,05KHz * 5000 milliseconds = 5 seconds of noise

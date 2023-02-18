@@ -5,18 +5,21 @@ import torch.nn.functional as F
 from torch.utils.data import Dataset
 import wandb
 from source.model import DiffWave
-from source.dataset import ChunkedMusDBHQ
+from source.dataset import ChunkedData
 from source.train import train
-from source.config import EPOCHS, BATCH_SIZE, LEARNING_RATE, NUM_BLOCKS, RES_CHANNELS, TIME_STEPS, VARIANCE_SCHEDULE, TIMESTEP_LAYER_WIDTH, SAMPLE_RATE, MAX_SAMPLES
+from source.config import EPOCHS, BATCH_SIZE, LEARNING_RATE, NUM_BLOCKS, RES_CHANNELS, TIME_STEPS, VARIANCE_SCHEDULE, TIMESTEP_LAYER_WIDTH, SAMPLE_RATE, MAX_SAMPLES, WITH_CONDITIONAL, N_MELS
 
-#clear cuda memory
 torch.cuda.empty_cache()
 
-data_path = os.path.join('chunked_audio')
+data_path = os.path.join('data/chunked_audio')
+conditional_path = os.path.join('data/mel_spectrograms')
 
-#example: python main.py path/to/data 20000
+#example: python main.py path/to/data
 if len(sys.argv) > 1:
     data_path = sys.argv[1]
+
+if len(sys.argv) > 2:
+    conditional_path = sys.argv[2]
 
 
 wandb.init(project="DiffWave", entity="daavidhauser")
@@ -33,7 +36,7 @@ wandb.config = {
     "sample_rate": SAMPLE_RATE
 } 
 
-chunked_data = ChunkedMusDBHQ(audio_dir=data_path, max_samples=MAX_SAMPLES)
+chunked_data = ChunkedData(audio_dir=data_path, conditional_dir=conditional_path, max_samples=MAX_SAMPLES)
 
 trainloader = torch.utils.data.DataLoader(
     chunked_data,
@@ -41,7 +44,7 @@ trainloader = torch.utils.data.DataLoader(
     shuffle=True,
     )
 
-model = DiffWave(RES_CHANNELS, NUM_BLOCKS, TIME_STEPS, VARIANCE_SCHEDULE, TIMESTEP_LAYER_WIDTH)
+model = DiffWave(RES_CHANNELS, NUM_BLOCKS, TIME_STEPS, VARIANCE_SCHEDULE, WITH_CONDITIONAL, N_MELS, layer_width=TIMESTEP_LAYER_WIDTH)
 optimizer = torch.optim.Adam(model.parameters(), lr=LEARNING_RATE)
 
 train(model, optimizer,trainloader, EPOCHS, TIME_STEPS, VARIANCE_SCHEDULE)
