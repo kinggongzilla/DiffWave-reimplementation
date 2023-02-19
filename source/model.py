@@ -1,16 +1,16 @@
 import math
 import torch
 import torch.nn.functional as F
-import torchaudio
 from tqdm import tqdm
+import torchaudio
 import numpy as np
 
 class SpectrogramConditioner(torch.nn.Module):
     def __init__(self):
         super().__init__()
-        self.conv1 = torch.nn.ConvTranspose2d(1, 1, kernel_size=(3,8), stride=(1, 8), padding=(1, 6), output_padding=(0, 5))
+        self.conv1 = torch.nn.ConvTranspose2d(1, 1, kernel_size=(3,12), stride=(1, 7), padding=(1, 128))
         self.acivation1 = torch.nn.LeakyReLU(0.4)
-        self.conv2 = torch.nn.ConvTranspose2d(1, 1, kernel_size=(3,8), stride=(1, 8), padding=(1, 6), output_padding=(0, 4))
+        self.conv2 = torch.nn.ConvTranspose2d(1, 1, kernel_size=(3,12), stride=(1, 7), padding=(1, 29), output_padding=(0, 0))
         self.acivation2 = torch.nn.LeakyReLU(0.4)
 
     def forward(self, spectrogram):
