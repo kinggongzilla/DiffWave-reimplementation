@@ -57,11 +57,11 @@ def train(model, optimizer, trainloader, epochs, timesteps, variance_schedule, l
             optimizer.step()
             epoch_loss += float(batch_loss.item())
             step_loss += float(batch_loss.item())
-            # wandb.log({"batch_loss": batch_loss})
+            wandb.log({"batch_loss": batch_loss})
 
             #step loss is logged and model saved every 500 steps, so runs with batch size 1 and many, many epochs can be monitored better
             if step_count % 500 == 0:
-                # wandb.log({"500_step_loss": step_loss/500})
+                wandb.log({"500_step_loss": step_loss/500})
                 if best_step_loss > step_loss/500:
                     best_step_loss = step_loss/500
                     torch.save(model.state_dict(), 'output/models/best_500_step_model.pt')
@@ -72,7 +72,7 @@ def train(model, optimizer, trainloader, epochs, timesteps, variance_schedule, l
             best_loss = epoch_loss
             torch.save(model.state_dict(), 'output/models/best_model.pt')
         print(f'epoch: {epoch} | loss: {epoch_loss}')
-        # wandb.log({"epoch_loss": epoch_loss})
+        wandb.log({"epoch_loss": epoch_loss})
 
 
     torch.save(model.state_dict(), 'output/models/model.pt')
