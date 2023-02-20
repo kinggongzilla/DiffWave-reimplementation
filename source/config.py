@@ -1,18 +1,18 @@
 import torch
 
 # params used in DiffWave paper for unconditional training in comments below
-EPOCHS = 60
+EPOCHS = 10000
 BATCH_SIZE = 8 #16
 LEARNING_RATE = 2 * 1e-4
 NUM_BLOCKS = 20 #36
 RES_CHANNELS = 64 #256
 TIMESTEP_LAYER_WIDTH = 512 #512
 TIME_STEPS = 50 #200
-VARIANCE_SCHEDULE = torch.linspace(10e-4, 0.05, TIME_STEPS) #torch.linspace(10e-4, 0.05, TIME_STEPS)
+VARIANCE_SCHEDULE = torch.linspace(10e-4, 0.02, TIME_STEPS) #torch.linspace(10e-4, 0.05, TIME_STEPS)
 SAMPLE_RATE = 8000 #16000 #22050 #44100
 SAMPLE_LENGTH_SECONDS = 4
-MAX_SAMPLES = 4500 # Use "None" for all samples in data input folder
-WITH_CONDITIONAL=True
+MAX_SAMPLES = 9000 # Use "None" for all samples in data input folder; 1000 = ~1h 6min
+WITH_CONDITIONING=True
 
 #DATA PREP TRANSFORM TO MEL SPECTROGRAM CONFIG
 WINDOW_LENGTH=1024
