@@ -35,13 +35,13 @@ class ChunkedData(Dataset):
             waveform = torchaudio.functional.resample(waveform, orig_freq=sample_rate, new_freq=SAMPLE_RATE)
         waveform = waveform[0:1,:] #get single channel waveform from waveform with two channels; slicing [0:1] to preserve dimensions
         
-        #load conditional
-        conditional = None
+        #load conditioning variable (spectrogram)
+        conditioning_var = None
         if self.conditional_dir is not None:
             conditional_file = os.listdir(self.conditional_dir)[index]
             #load .npy file
-            conditional = torch.from_numpy(np.load(os.path.join(self.conditional_dir, conditional_file)))
-            conditional = conditional[0:1,:, :] #get single channel spectrogram slicing [0:1] to preserve dimensions
-            return waveform, SAMPLE_RATE, conditional
+            conditioning_var = torch.from_numpy(np.load(os.path.join(self.conditional_dir, conditional_file)))
+            conditioning_var = conditioning_var[0:1,:, :] #get single channel spectrogram slicing [0:1] to preserve dimensions
+            return waveform, SAMPLE_RATE, conditioning_var
         else:
             return waveform, SAMPLE_RATE

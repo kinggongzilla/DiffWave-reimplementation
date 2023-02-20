@@ -3,9 +3,9 @@ import numpy as np
 from tqdm import tqdm
 from source.model import DiffWave
 import wandb
-from source.config import EPOCHS, BATCH_SIZE, LEARNING_RATE, NUM_BLOCKS, RES_CHANNELS, TIME_STEPS, VARIANCE_SCHEDULE, TIMESTEP_LAYER_WIDTH, SAMPLE_RATE, SAMPLE_LENGTH_SECONDS, WITH_CONDITIONAL
+from source.config import EPOCHS, BATCH_SIZE, LEARNING_RATE, NUM_BLOCKS, RES_CHANNELS, TIME_STEPS, VARIANCE_SCHEDULE, TIMESTEP_LAYER_WIDTH, SAMPLE_RATE, SAMPLE_LENGTH_SECONDS, WITH_CONDITIONING
 
-def train(model, optimizer, trainloader, epochs, timesteps, variance_schedule, lr=1e-4, with_conditional=WITH_CONDITIONAL):
+def train(model, optimizer, trainloader, epochs, timesteps, variance_schedule, lr=1e-4, with_conditioning=WITH_CONDITIONING):
 
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
@@ -41,12 +41,12 @@ def train(model, optimizer, trainloader, epochs, timesteps, variance_schedule, l
             t = t.to(device)
             noise = noise.to(device)
 
-            conditional = None
-            if with_conditional:
-                conditional = batch[2] # get conditional (spectrogram) from tuple; batch size, channels, length
-                conditional = conditional.to(device)
+            conditioning_var = None
+            if with_conditioning:
+                conditioning_var = batch[2] # get conditioning_var (spectrogram) from tuple; batch size, channels, length
+                conditioning_var = conditioning_var.to(device)
 
-            y_pred = model.forward(waveform, t, conditional)
+            y_pred = model.forward(waveform, t, conditioning_var)
             del waveform
             del t
             loss_func = torch.nn.MSELoss(reduction='mean')
