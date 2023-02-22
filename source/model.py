@@ -22,16 +22,16 @@ class SpectrogramConditioner(torch.nn.Module):
         return spectrogram
 
 class DiffWaveBlock(torch.nn.Module):
-    def __init__(self, layer_index, residual_channles, layer_width, n_mels, dilation_mod, with_conditioner: bool) -> None:
+    def __init__(self, layer_index, residual_channles, layer_width, n_mels, dilation_mod, with_conditioning: bool) -> None:
         super().__init__()
         self.layer_index = layer_index
         self.residual_channels = residual_channles
         self.layer_width = layer_width
         self.input = None
         self.x_skip = None
-        self.with_conditioner = with_conditioner
+        self.with_conditioner = with_conditioning
 
-        if with_conditioner:
+        if with_conditioning:
             self.conv_conditioner = torch.nn.Conv1d(80, 2*residual_channles, 1)
 
         # diffusion time step embedding
@@ -91,7 +91,7 @@ class DiffWave(torch.nn.Module):
         #blocks
         self.blocks = torch.nn.ModuleList()
         for i in range(num_blocks):
-            self.blocks.append(DiffWaveBlock(i, residual_channels, layer_width, n_mels, dilation_mod=dilation_mod, with_conditioner=with_conditioning))
+            self.blocks.append(DiffWaveBlock(i, residual_channels, layer_width, n_mels, dilation_mod=dilation_mod, with_conditioning=with_conditioning))
 
         #out
         self.out = torch.nn.Sequential(
