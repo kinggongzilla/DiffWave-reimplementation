@@ -21,24 +21,24 @@ if len(sys.argv) > 1:
 if len(sys.argv) > 2:
     conditional_path = sys.argv[2]
 
-# wandb.init(
-#     project="DiffWave", 
-#     entity="daavidhauser",
-#     config = {
-#     "learning_rate": LEARNING_RATE,
-#     "epochs": EPOCHS,
-#     "batch_size": BATCH_SIZE,
-#     "num_blocks": NUM_BLOCKS,
-#     "res_channels": RES_CHANNELS,
-#     "time_steps": TIME_STEPS,
-#     "variance_schedule": VARIANCE_SCHEDULE,
-#     "timestep_layer_width": TIMESTEP_LAYER_WIDTH,
-#     "sample_rate": SAMPLE_RATE,
-#     "sample_length_seconds": SAMPLE_LENGTH_SECONDS,
-#     "max_samples": MAX_SAMPLES,
-#     "with_conditional": WITH_CONDITIONING
-#     }
-# )
+wandb.init(
+    project="DiffWave", 
+    entity="daavidhauser",
+    config = {
+    "learning_rate": LEARNING_RATE,
+    "epochs": EPOCHS,
+    "batch_size": BATCH_SIZE,
+    "num_blocks": NUM_BLOCKS,
+    "res_channels": RES_CHANNELS,
+    "time_steps": TIME_STEPS,
+    "variance_schedule": VARIANCE_SCHEDULE,
+    "timestep_layer_width": TIMESTEP_LAYER_WIDTH,
+    "sample_rate": SAMPLE_RATE,
+    "sample_length_seconds": SAMPLE_LENGTH_SECONDS,
+    "max_samples": MAX_SAMPLES,
+    "with_conditional": WITH_CONDITIONING
+    }
+)
 
 chunked_data = ChunkedData(audio_dir=data_path, conditional_dir=conditional_path, max_samples=MAX_SAMPLES)
 
@@ -52,3 +52,6 @@ model = DiffWave(RES_CHANNELS, NUM_BLOCKS, TIME_STEPS, VARIANCE_SCHEDULE, WITH_C
 optimizer = torch.optim.Adam(model.parameters(), lr=LEARNING_RATE)
 
 train(model, optimizer,trainloader, EPOCHS, TIME_STEPS, VARIANCE_SCHEDULE)
+
+#generate a sample directly after training
+import sample

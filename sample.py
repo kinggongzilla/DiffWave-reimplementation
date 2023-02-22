@@ -3,6 +3,7 @@ import sys
 import numpy as np
 import torch
 import torchaudio
+import wandb
 from source.model import DiffWave
 from source.config import NUM_BLOCKS, RES_CHANNELS, TIME_STEPS, VARIANCE_SCHEDULE, TIMESTEP_LAYER_WIDTH, SAMPLE_RATE, SAMPLE_LENGTH_SECONDS, N_MELS, WITH_CONDITIONING
 
@@ -32,4 +33,5 @@ y = model.sample(noise, conditioning_var=conditioning_var if model.with_conditio
 for i in range(y.shape[0]): #for each sample in batch
     path = os.path.join("output/samples", f"sample{i}.wav")
     torchaudio.save(path, y[i], SAMPLE_RATE)
+    wandb.save(path)
     print('Saved sample to', path)
