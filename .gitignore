@@ -4,6 +4,7 @@
 /data/mel_spectrograms
 /.ipynb_checkpoints
 /source/__pycache__
+__pycache__/
 /chunked_audio
 /raw_samples
 /azure_test
