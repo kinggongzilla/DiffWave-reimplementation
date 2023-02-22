@@ -74,10 +74,6 @@ def train(model, optimizer, trainloader, epochs, timesteps, variance_schedule, l
         print(f'epoch: {epoch} | loss: {epoch_loss}')
         wandb.log({"epoch_loss": epoch_loss})
 
-        if epoch % 10 == 0:
-            model.sample()
-
-
     torch.save(model.state_dict(), 'output/models/model.pt')
     wandb.save('output/models/best_model.pt')
     return model
