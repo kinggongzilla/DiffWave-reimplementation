@@ -1,13 +1,13 @@
 import torch
 
 # params used in DiffWave paper for unconditional training in comments below
-EPOCHS = 1000
+EPOCHS = 5000
 BATCH_SIZE = 6 #16
 LEARNING_RATE = 2 * 1e-4
 NUM_BLOCKS = 36 #36
 RES_CHANNELS = 64 #256
 TIMESTEP_LAYER_WIDTH = 512 #512
-TIME_STEPS = 50 #200
+TIME_STEPS = 200
 VARIANCE_SCHEDULE = torch.linspace(10e-4, 0.02, TIME_STEPS) #torch.linspace(10e-4, 0.05, TIME_STEPS)
 SAMPLE_RATE = 8000 #16000 #22050 #44100
 SAMPLE_LENGTH_SECONDS = 4
