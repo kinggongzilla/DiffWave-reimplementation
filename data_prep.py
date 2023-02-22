@@ -46,6 +46,7 @@ def transform_to_spectrogram(
 
 #load data of one wav and split it into chunks
 def chop_wav(song_id: str, audio_path: str, out_dir: str, length: int):
+
     print('audio_path: ', audio_path)
     #check if out_dir exists
     if not os.path.exists(out_dir):
@@ -69,6 +70,9 @@ def chop_wav(song_id: str, audio_path: str, out_dir: str, length: int):
 
 
     for i in range(n_iters):
+        #break if max samples reached
+        if len(os.listdir(chopped_audio_out_path)) >= (MAX_SAMPLES):
+            break
         newAudio = audio[start:end]
         newAudio.export(os.path.join(out_dir, '{}_{}{}'.format(song_id, start, file_ending)), format="wav")
         start += length
