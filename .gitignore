@@ -16,3 +16,5 @@ model.pt
 sample.wav
 sample0.wav
 best_model.pt
+source/config.py
+test.ipynb
