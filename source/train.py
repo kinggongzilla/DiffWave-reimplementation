@@ -67,7 +67,7 @@ def train(model, optimizer, trainloader, epochs, timesteps, variance_schedule, l
                     torch.save(model.state_dict(), 'output/models/best_500_step_model.pt')
                 step_loss = 0
 
-            if step_count % 1000 == 0:
+            if step_count % 200 == 0:
                 import sample
 
 
