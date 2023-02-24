@@ -10,7 +10,8 @@ from source.config import NUM_BLOCKS, RES_CHANNELS, TIME_STEPS, VARIANCE_SCHEDUL
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
 model_path = "output/models/best_model.pt"
-conditioner_file_name = os.listdir("data/mel_spectrograms/")[0] #first file in mel_spectrogram folder
+if WITH_CONDITIONING:
+    conditioner_file_name = os.listdir("data/mel_spectrograms/")[0] #first file in mel_spectrogram folder
 if len(sys.argv) > 1:
     model_path = sys.argv[1]
 
