@@ -4,8 +4,8 @@ import numpy as np
 import torch
 import torchaudio
 import wandb
-from source.model import DiffWave
-from source.config import NUM_BLOCKS, RES_CHANNELS, TIME_STEPS, VARIANCE_SCHEDULE, TIMESTEP_LAYER_WIDTH, SAMPLE_RATE, SAMPLE_LENGTH_SECONDS, N_MELS, WITH_CONDITIONING
+from model import DiffWave
+from config import NUM_BLOCKS, RES_CHANNELS, TIME_STEPS, VARIANCE_SCHEDULE, TIMESTEP_LAYER_WIDTH, SAMPLE_RATE, SAMPLE_LENGTH_SECONDS, N_MELS, WITH_CONDITIONING
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
@@ -32,7 +32,10 @@ if WITH_CONDITIONING:
 noise = torch.randn(1, 1, SAMPLE_RATE*SAMPLE_LENGTH_SECONDS) # batch_size, n_channels, sample length e.g. 22,05KHz * 5000 milliseconds = 5 seconds of noise
 y = model.sample(noise, conditioning_var=conditioning_var if model.with_conditioner else None)
 for i in range(y.shape[0]): #for each sample in batch
-    path = os.path.join("output/samples", f"sample{i}.wav")
+    random_int = np.random.randint(0, 1000000)
+    path = os.path.join("output/samples", f"sample{random_int}.wav") #use random int to make name unique if sample is called multiple times during training
     torchaudio.save(path, y[i], SAMPLE_RATE)
-    wandb.save(path)
+    #if wanbd is initialized
+    if wandb.run is not None:
+        wandb.save(path)
     print('Saved sample to', path)

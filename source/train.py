@@ -1,9 +1,9 @@
 import torch
 import numpy as np
 from tqdm import tqdm
-from source.model import DiffWave
+from model import DiffWave
 import wandb
-from source.config import EPOCHS, BATCH_SIZE, LEARNING_RATE, NUM_BLOCKS, RES_CHANNELS, TIME_STEPS, VARIANCE_SCHEDULE, TIMESTEP_LAYER_WIDTH, SAMPLE_RATE, SAMPLE_LENGTH_SECONDS, WITH_CONDITIONING
+from config import EPOCHS, BATCH_SIZE, LEARNING_RATE, NUM_BLOCKS, RES_CHANNELS, TIME_STEPS, VARIANCE_SCHEDULE, TIMESTEP_LAYER_WIDTH, SAMPLE_RATE, SAMPLE_LENGTH_SECONDS, WITH_CONDITIONING
 
 def train(model, optimizer, trainloader, epochs, timesteps, variance_schedule, lr=1e-4, with_conditioning=WITH_CONDITIONING):
 
@@ -66,6 +66,10 @@ def train(model, optimizer, trainloader, epochs, timesteps, variance_schedule, l
                     best_step_loss = step_loss/500
                     torch.save(model.state_dict(), 'output/models/best_500_step_model.pt')
                 step_loss = 0
+
+            if step_count % 1000 == 0:
+                import sample
+
 
         epoch_loss = epoch_loss/len(trainloader)
         if epoch_loss < best_loss:

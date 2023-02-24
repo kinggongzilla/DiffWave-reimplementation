@@ -5,7 +5,7 @@ import torch
 import torch.nn.functional as F
 from torch.utils.data import Dataset
 import torchaudio
-from source.config import SAMPLE_RATE
+from config import SAMPLE_RATE
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 

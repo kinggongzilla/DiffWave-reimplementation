@@ -4,10 +4,10 @@ import torch
 import torch.nn.functional as F
 from torch.utils.data import Dataset
 import wandb
-from source.model import DiffWave
-from source.dataset import ChunkedData
-from source.train import train
-from source.config import EPOCHS, BATCH_SIZE, LEARNING_RATE, NUM_BLOCKS, RES_CHANNELS, TIME_STEPS, VARIANCE_SCHEDULE, TIMESTEP_LAYER_WIDTH, SAMPLE_RATE, SAMPLE_LENGTH_SECONDS, MAX_SAMPLES, WITH_CONDITIONING, N_MELS
+from model import DiffWave
+from dataset import ChunkedData
+from train import train
+from config import EPOCHS, BATCH_SIZE, LEARNING_RATE, NUM_BLOCKS, RES_CHANNELS, TIME_STEPS, VARIANCE_SCHEDULE, TIMESTEP_LAYER_WIDTH, SAMPLE_RATE, SAMPLE_LENGTH_SECONDS, MAX_SAMPLES, WITH_CONDITIONING, N_MELS
 
 #start with empty cache
 torch.cuda.empty_cache()
@@ -61,4 +61,4 @@ optimizer = torch.optim.Adam(model.parameters(), lr=LEARNING_RATE)
 train(model, optimizer,trainloader, EPOCHS, TIME_STEPS, VARIANCE_SCHEDULE)
 
 #generate a sample directly after training
-import sample
+import sample as sample

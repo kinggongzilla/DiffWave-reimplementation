@@ -46,7 +46,6 @@ class DiffWaveBlock(torch.nn.Module):
         self.conv_next = torch.nn.Conv1d(residual_channles, residual_channles, 1)
 
     def forward(self, x, t, conditioning_var=None):
-
         input = x.clone()
         t = self.fc_timestep(t)
         t = torch.broadcast_to(torch.unsqueeze(t,2), (x.shape[0], x.shape[1], x.shape[2])) #broadcast to length of audio input
@@ -101,7 +100,6 @@ class DiffWave(torch.nn.Module):
             torch.nn.Conv1d(residual_channels, 1, 1))
 
     def forward(self, x, t, conditioning_var=None):
-
         #conditioning variable (spectrogram) input
         if conditioning_var is not None:
             conditioning_var = self.conditioner_block(conditioning_var)
