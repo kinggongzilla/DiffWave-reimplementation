@@ -49,8 +49,8 @@ def train(model, optimizer, trainloader, epochs, timesteps, variance_schedule, l
             y_pred = model.forward(waveform, t, conditioning_var)
             del waveform
             del t
-            # loss_func = torch.nn.L1Loss()
-            loss_func = torch.nn.MSELoss()
+            loss_func = torch.nn.L1Loss()
+            # loss_func = torch.nn.MSELoss()
             batch_loss = loss_func(y_pred, noise)
             del y_pred
             del noise
