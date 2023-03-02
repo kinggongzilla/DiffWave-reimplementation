@@ -68,10 +68,6 @@ def train(model, optimizer, trainloader, epochs, timesteps, variance_schedule, l
                     torch.save(model.state_dict(), 'output/models/best_500_step_model.pt')
                 step_loss = 0
 
-            if step_count % 200 == 0:
-                import sample
-
-
         epoch_loss = epoch_loss/len(trainloader)
         if epoch_loss < best_loss:
             best_loss = epoch_loss
@@ -79,6 +75,6 @@ def train(model, optimizer, trainloader, epochs, timesteps, variance_schedule, l
         print(f'epoch: {epoch} | loss: {epoch_loss}')
         wandb.log({"epoch_loss": epoch_loss})
 
-    torch.save(model.state_dict(), 'output/models/model.pt')
+    torch.save(model.state_dict(), 'output/models/last_model.pt')
     wandb.save('output/models/best_model.pt')
     return model
