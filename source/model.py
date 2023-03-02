@@ -121,7 +121,7 @@ class DiffWave(torch.nn.Module):
         residual_sum = residual_sum / np.sqrt(len(self.blocks)) #divide by sqrt of number of blocks as in paper Github code
         
         #out
-        # x = self.out(x)
+        x = self.out(x)
         # x = self.out(residual_sum)
         return x
 
