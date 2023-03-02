@@ -42,8 +42,9 @@ class DiffWaveBlock(torch.nn.Module):
         #bi directional conv
         self.conv_dilated = torch.nn.Conv1d(residual_channles, 2*residual_channles, 3, dilation=2**(layer_index%dilation_mod), padding='same')
 
-        self.conv_skip = torch.nn.Conv1d(residual_channles, residual_channles, 1)
-        self.conv_next = torch.nn.Conv1d(residual_channles, residual_channles, 1)
+        self.conv_out = torch.nn.Conv1d(residual_channles, 2*residual_channles, 1)
+        # self.conv_skip = torch.nn.Conv1d(residual_channles, residual_channles, 1)
+        # self.conv_next = torch.nn.Conv1d(residual_channles, residual_channles, 1)
 
     def forward(self, x, t, conditioning_var=None):
         input = x.clone()
@@ -57,9 +58,9 @@ class DiffWaveBlock(torch.nn.Module):
         x_tanh = torch.tanh(x_tanh)
         x_sigmoid = torch.sigmoid(x_sigmoid)
         x = x_tanh * x_sigmoid
-        self.x_skip = self.conv_skip(x)
-        x = self.conv_next(x) + input
-        return x / np.sqrt(2.0) #divide by sqrt(2) as in official Github code
+        x = self.conv_out(x)
+        x, skip = torch.chunk(x, 2, dim=1)
+        return (x + input) / np.sqrt(2.0), skip
 
 
 class DiffWave(torch.nn.Module):
@@ -116,14 +117,13 @@ class DiffWave(torch.nn.Module):
         residual_sum = torch.empty_like(x)
 
         #blocks
+        skip = None
         for block in self.blocks:
-            x = block.forward(x, t, conditioning_var=conditioning_var)
-            residual_sum += block.x_skip
-        residual_sum = residual_sum / np.sqrt(len(self.blocks)) #divide by sqrt of number of blocks as in paper Github code
-        
+            x, skip_connection = block.forward(x, t, conditioning_var=conditioning_var)
+            skip = skip_connection if skip is None else skip_connection + skip
+        skip = skip / np.sqrt(len(self.blocks)) #divide by sqrt of number of blocks as in paper Github code
         #out
-        x = self.out(x)
-        # x = self.out(residual_sum)
+        x = self.out(skip)
         return x
 
 
