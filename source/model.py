@@ -59,7 +59,7 @@ class DiffWaveBlock(torch.nn.Module):
         x = x_tanh * x_sigmoid
         self.x_skip = self.conv_skip(x)
         x = self.conv_next(x) + input
-        return x
+        return x / torch.sqrt(2.0) #divide by sqrt(2) as in official Github code
 
 
 class DiffWave(torch.nn.Module):
@@ -97,6 +97,7 @@ class DiffWave(torch.nn.Module):
         #out
         self.out = torch.nn.Sequential(
             torch.nn.Conv1d(residual_channels, residual_channels, 1), 
+            torch.nn.ReLU(),
             torch.nn.Conv1d(residual_channels, 1, 1))
 
     def forward(self, x, t, conditioning_var=None):
