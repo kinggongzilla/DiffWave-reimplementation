@@ -114,8 +114,6 @@ class DiffWave(torch.nn.Module):
 
         t = self.timestep_in(t)
 
-        residual_sum = torch.empty_like(x)
-
         #blocks
         skip = None
         for block in self.blocks:
@@ -123,7 +121,7 @@ class DiffWave(torch.nn.Module):
             skip = skip_connection if skip is None else skip_connection + skip
         skip = skip / np.sqrt(len(self.blocks)) #divide by sqrt of number of blocks as in paper Github code
         #out
-        x = self.out(skip)
+        x = self.out(x)
         return x
 
 
