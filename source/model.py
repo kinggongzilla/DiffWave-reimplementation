@@ -8,10 +8,10 @@ import numpy as np
 class SpectrogramConditioner(torch.nn.Module):
     def __init__(self):
         super().__init__()
-        # self.conv1 = torch.nn.ConvTranspose2d(1, 1, kernel_size=(3,12), stride=(1, 7), padding=(1, 128))
+        # self.conv1 = torch.nn.ConvTranspose2d(1, 1, kernel_size=(3,12), stride=(1, 7), padding=(1, 128)) #tanspose conv shapes for speech samples
         self.conv1 = torch.nn.ConvTranspose2d(1, 1, kernel_size=(3,12), stride=(1, 7), padding=(1, 128))
         self.acivation1 = torch.nn.LeakyReLU(0.4)
-        # self.conv2 = torch.nn.ConvTranspose2d(1, 1, kernel_size=(3,12), stride=(1, 15), padding=(1, 229), output_padding=(0, 1))
+        # self.conv2 = torch.nn.ConvTranspose2d(1, 1, kernel_size=(3,12), stride=(1, 15), padding=(1, 229), output_padding=(0, 1)) #transpose conv shapes for speech samples
         self.conv2 = torch.nn.ConvTranspose2d(1, 1, kernel_size=(3,12), stride=(1, 7), padding=(1, 29))
         self.acivation2 = torch.nn.LeakyReLU(0.4)
 
@@ -24,7 +24,7 @@ class SpectrogramConditioner(torch.nn.Module):
 
 
 class DiffWaveBlock(torch.nn.Module):
-    def __init__(self, layer_index, residual_channles, layer_width, n_mels, dilation_mod, with_conditioning: bool) -> None:
+    def __init__(self, layer_index, residual_channles, layer_width, dilation_mod, with_conditioning: bool) -> None:
         super().__init__()
         self.layer_index = layer_index
         self.residual_channels = residual_channles
@@ -92,7 +92,7 @@ class DiffWave(torch.nn.Module):
         #blocks
         self.blocks = torch.nn.ModuleList()
         for i in range(num_blocks):
-            self.blocks.append(DiffWaveBlock(i, residual_channels, layer_width, n_mels, dilation_mod=dilation_mod, with_conditioning=with_conditioning))
+            self.blocks.append(DiffWaveBlock(i, residual_channels, layer_width, dilation_mod=dilation_mod, with_conditioning=with_conditioning))
 
         #out
         self.out = torch.nn.Sequential(
@@ -116,12 +116,13 @@ class DiffWave(torch.nn.Module):
 
         #blocks
         for block in self.blocks:
-            x = block(x, t, conditioning_var=conditioning_var)
+            x = block.forward(x, t, conditioning_var=conditioning_var)
             residual_sum += block.x_skip
         residual_sum = residual_sum / np.sqrt(len(self.blocks)) #divide by sqrt of number of blocks as in paper Github code
         
         #out
-        x = self.out(residual_sum)
+        # x = self.out(x)
+        # x = self.out(residual_sum)
         return x
 
 
