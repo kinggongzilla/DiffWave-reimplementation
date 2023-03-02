@@ -1,6 +1,6 @@
 import torch
 
-EPOCHS = 1
+EPOCHS = 5000
 BATCH_SIZE = 6 #16
 LEARNING_RATE = 2 * 1e-4
 NUM_BLOCKS = 36 #36
