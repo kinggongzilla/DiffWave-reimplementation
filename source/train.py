@@ -3,13 +3,13 @@ import numpy as np
 from tqdm import tqdm
 from model import DiffWave
 import wandb
-from config import EPOCHS, BATCH_SIZE, LEARNING_RATE, NUM_BLOCKS, RES_CHANNELS, TIME_STEPS, VARIANCE_SCHEDULE, TIMESTEP_LAYER_WIDTH, SAMPLE_RATE, SAMPLE_LENGTH_SECONDS, WITH_CONDITIONING
+from config import WITH_CONDITIONING
 
 def train(model, optimizer, trainloader, epochs, timesteps, variance_schedule, lr=1e-4, with_conditioning=WITH_CONDITIONING):
 
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-
     print(f'Using device: {device}')
+
     model_parameters = filter(lambda p: p.requires_grad, model.parameters())
     params = sum([np.prod(p.size()) for p in model_parameters])
     print(f'Total number of parameters: {params}') #print number of parameters

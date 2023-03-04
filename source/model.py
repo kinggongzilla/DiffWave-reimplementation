@@ -4,6 +4,47 @@ import torch.nn.functional as F
 from tqdm import tqdm
 import torchaudio
 import numpy as np
+from config import VARIANCE_SCHEDULE, N_MELS
+
+def Conv1d(*args, **kwargs):
+  layer = torch.nn.Conv1d(*args, **kwargs)
+  torch.nn.init.kaiming_normal_(layer.weight)
+  return layer
+
+class DiffusionEmbedding(torch.nn.Module):
+  def __init__(self, max_steps):
+    super().__init__()
+    self.register_buffer('embedding', self._build_embedding(max_steps), persistent=False)
+    self.projection1 = torch.nn.Linear(128, 512)
+    self.silu1 = torch.nn.SiLU()
+    self.projection2 = torch.nn.Linear(512, 512)
+    self.silu2 = torch.nn.SiLU()
+
+
+  def forward(self, t):
+    if t.dtype in [torch.int32, torch.int64]:
+      x = self.embedding[t]
+    else:
+      x = self._lerp_embedding(t)
+    x = self.projection1(x)
+    x = self.silu1(x)
+    x = self.projection2(x)
+    x = self.silu2(x)
+    return x
+
+  def _lerp_embedding(self, t):
+    low_idx = torch.floor(t).long()
+    high_idx = torch.ceil(t).long()
+    low = self.embedding[low_idx]
+    high = self.embedding[high_idx]
+    return low + (high - low) * (t - low_idx)
+
+  def _build_embedding(self, max_steps):
+    steps = torch.arange(max_steps).unsqueeze(1)  # [T,1]
+    dims = torch.arange(64).unsqueeze(0)          # [1,64]
+    table = steps * 10.0**(dims * 4.0 / 63.0)     # [T,64]
+    table = torch.cat([torch.sin(table), torch.cos(table)], dim=1)
+    return table
 
 class SpectrogramConditioner(torch.nn.Module):
     def __init__(self):
@@ -34,22 +75,23 @@ class DiffWaveBlock(torch.nn.Module):
         self.with_conditioner = with_conditioning
 
         if with_conditioning:
-            self.conv_conditioner = torch.nn.Conv1d(80, 2*residual_channles, 1)
+            self.conv_conditioner = Conv1d(N_MELS, 2*residual_channles, 1)
 
         # diffusion time step embedding
         self.fc_timestep = torch.nn.Linear(layer_width, residual_channles)
 
         #bi directional conv
-        self.conv_dilated = torch.nn.Conv1d(residual_channles, 2*residual_channles, 3, dilation=2**(layer_index%dilation_mod), padding='same')
+        self.conv_dilated = Conv1d(residual_channles, 2*residual_channles, 3, dilation=2**(layer_index%dilation_mod), padding='same')
 
-        self.conv_out = torch.nn.Conv1d(residual_channles, 2*residual_channles, 1)
-        # self.conv_skip = torch.nn.Conv1d(residual_channles, residual_channles, 1)
-        # self.conv_next = torch.nn.Conv1d(residual_channles, residual_channles, 1)
+        self.conv_out = Conv1d(residual_channles, 2*residual_channles, 1)
+        # self.conv_skip = Conv1d(residual_channles, residual_channles, 1)
+        # self.conv_next = Conv1d(residual_channles, residual_channles, 1)
 
     def forward(self, x, t, conditioning_var=None):
         input = x.clone()
         t = self.fc_timestep(t)
-        t = torch.broadcast_to(torch.unsqueeze(t,2), (x.shape[0], x.shape[1], x.shape[2])) #broadcast to length of audio input
+        t = t.unsqueeze(-1) # add another dimension at the end
+        t = t.expand(1, 64, 32000) # expand the last dimension to match x
         x = x + t #broadcast addition
         x = self.conv_dilated(x)
         if conditioning_var is not None:
@@ -78,15 +120,11 @@ class DiffWave(torch.nn.Module):
             self.conditioner_block = SpectrogramConditioner()
 
         #in
-        self.timestep_in = torch.nn.Sequential(
-            torch.nn.Linear(128, layer_width),
-            torch.nn.SiLU(),
-            torch.nn.Linear(layer_width, layer_width),
-            torch.nn.SiLU()
-        )
+        self.timestep_in = DiffusionEmbedding(len(VARIANCE_SCHEDULE))
+
 
         self.waveform_in = torch.nn.Sequential(
-            torch.nn.Conv1d(1, residual_channels, 1),
+            Conv1d(1, residual_channels, 1),
             torch.nn.ReLU()
         )
 
@@ -97,9 +135,9 @@ class DiffWave(torch.nn.Module):
 
         #out
         self.out = torch.nn.Sequential(
-            torch.nn.Conv1d(residual_channels, residual_channels, 1), 
+            Conv1d(residual_channels, residual_channels, 1), 
             torch.nn.ReLU(),
-            torch.nn.Conv1d(residual_channels, 1, 1))
+            Conv1d(residual_channels, 1, 1))
 
     def forward(self, x, t, conditioning_var=None):
         #conditioning variable (spectrogram) input
@@ -110,8 +148,6 @@ class DiffWave(torch.nn.Module):
         x = self.waveform_in(x)
 
         #time embedding
-        t = self.embed_timestep(t).to(x.device)
-
         t = self.timestep_in(t)
 
         #blocks
@@ -148,21 +184,12 @@ class DiffWave(torch.nn.Module):
             for n in tqdm(range(len(alpha) - 1, -1, -1)):
                 c1 = 1 / alpha[n]**0.5
                 c2 = beta[n] / (1 - alpha_cum[n])**0.5
-                x_t = c1 * (x_t - c2 * self.forward(x_t, n, conditioning_var).squeeze(1))
+                x_t = c1 * (x_t - c2 * self.forward(x_t, torch.tensor(n), conditioning_var).squeeze(1))
                 if n > 0:
                     noise = torch.randn_like(x_t)
                     sigma = ((1.0 - alpha_cum[n-1]) / (1.0 - alpha_cum[n]) * beta[n])**0.5
                     x_t += sigma * noise
                 x_t = torch.clamp(x_t, -1.0, 1.0)
         return x_t 
-            
-
-    def embed_timestep(self, t, batch_size=1):
-        embedding = torch.zeros(1, 128)
-        for i in range(64):
-            embedding[0, i] = math.sin(10**((i*4)/63)*t)
-        for j in range(64):
-            embedding[0, j+64] = math.cos(10**((j*4)/63)*t)
-        return torch.broadcast_to(embedding, (batch_size, 128)) #broadcast to batch size
 
 
