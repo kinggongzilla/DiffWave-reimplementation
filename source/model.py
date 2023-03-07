@@ -11,41 +11,43 @@ def Conv1d(*args, **kwargs):
   torch.nn.init.kaiming_normal_(layer.weight)
   return layer
 
+#Embedding for diffusion time step
 class DiffusionEmbedding(torch.nn.Module):
-  def __init__(self, max_steps):
-    super().__init__()
-    self.register_buffer('embedding', self._build_embedding(max_steps), persistent=False)
-    self.projection1 = torch.nn.Linear(128, 512)
-    self.silu1 = torch.nn.SiLU()
-    self.projection2 = torch.nn.Linear(512, 512)
-    self.silu2 = torch.nn.SiLU()
+    def __init__(self, max_steps):
+        super().__init__()
+        self.register_buffer('embedding', self._build_embedding(max_steps), persistent=False)
+        self.projection1 = torch.nn.Linear(128, 512)
+        self.silu1 = torch.nn.SiLU()
+        self.projection2 = torch.nn.Linear(512, 512)
+        self.silu2 = torch.nn.SiLU()
 
+    #project diffusion timestep into latent space
+    def forward(self, t):
+        if t.dtype in [torch.int32, torch.int64]:
+            x = self.embedding[t]
+        else:
+            x = self._lerp_embedding(t)
+        x = self.projection1(x)
+        x = self.silu1(x)
+        x = self.projection2(x)
+        x = self.silu2(x)
+        return x
 
-  def forward(self, t):
-    if t.dtype in [torch.int32, torch.int64]:
-      x = self.embedding[t]
-    else:
-      x = self._lerp_embedding(t)
-    x = self.projection1(x)
-    x = self.silu1(x)
-    x = self.projection2(x)
-    x = self.silu2(x)
-    return x
+    def _lerp_embedding(self, t):
+        low_idx = torch.floor(t).long()
+        high_idx = torch.ceil(t).long()
+        low = self.embedding[low_idx]
+        high = self.embedding[high_idx]
+        return low + (high - low) * (t - low_idx)
 
-  def _lerp_embedding(self, t):
-    low_idx = torch.floor(t).long()
-    high_idx = torch.ceil(t).long()
-    low = self.embedding[low_idx]
-    high = self.embedding[high_idx]
-    return low + (high - low) * (t - low_idx)
+    def _build_embedding(self, max_steps):
+        steps = torch.arange(max_steps).unsqueeze(1)  # [T,1]
+        dims = torch.arange(64).unsqueeze(0)          # [1,64]
+        table = steps * 10.0**(dims * 4.0 / 63.0)     # [T,64]
+        table = torch.cat([torch.sin(table), torch.cos(table)], dim=1)
+        return table
 
-  def _build_embedding(self, max_steps):
-    steps = torch.arange(max_steps).unsqueeze(1)  # [T,1]
-    dims = torch.arange(64).unsqueeze(0)          # [1,64]
-    table = steps * 10.0**(dims * 4.0 / 63.0)     # [T,64]
-    table = torch.cat([torch.sin(table), torch.cos(table)], dim=1)
-    return table
-
+#conditioner for spectrogram
 class SpectrogramConditioner(torch.nn.Module):
     def __init__(self):
         super().__init__()
@@ -56,6 +58,7 @@ class SpectrogramConditioner(torch.nn.Module):
         self.conv2 = torch.nn.ConvTranspose2d(1, 1, kernel_size=(3,12), stride=(1, 7), padding=(1, 29))
         self.acivation2 = torch.nn.LeakyReLU(0.4)
 
+    #project spectrogram into latent space
     def forward(self, spectrogram):
         spectrogram = self.conv1(spectrogram)
         spectrogram = self.acivation1(spectrogram)
@@ -63,7 +66,7 @@ class SpectrogramConditioner(torch.nn.Module):
         spectrogram = self.acivation2(spectrogram)
         return torch.squeeze(spectrogram, 1)
 
-
+#DiffWave residual block
 class DiffWaveBlock(torch.nn.Module):
     def __init__(self, layer_index, residual_channles, layer_width, dilation_mod, with_conditioning: bool) -> None:
         super().__init__()
@@ -77,16 +80,16 @@ class DiffWaveBlock(torch.nn.Module):
         if with_conditioning:
             self.conv_conditioner = Conv1d(N_MELS, 2*residual_channles, 1)
 
-        # diffusion time step embedding
+        # linear layer that processes diffusion timestep
         self.fc_timestep = torch.nn.Linear(layer_width, residual_channles)
 
-        #bi directional conv
+        # bi directional conv
         self.conv_dilated = Conv1d(residual_channles, 2*residual_channles, 3, dilation=2**(layer_index%dilation_mod), padding='same')
 
+        # outgoing convolution laayer
         self.conv_out = Conv1d(residual_channles, 2*residual_channles, 1)
-        # self.conv_skip = Conv1d(residual_channles, residual_channles, 1)
-        # self.conv_next = Conv1d(residual_channles, residual_channles, 1)
 
+    #forward pass, according to architecture in DiffWave paper
     def forward(self, x, t, conditioning_var=None):
         input = x.clone()
         t = self.fc_timestep(t)
@@ -94,6 +97,8 @@ class DiffWaveBlock(torch.nn.Module):
         t = t.expand(1, 64, 32000) # expand the last dimension to match x
         x = x + t #broadcast addition
         x = self.conv_dilated(x)
+
+        #if conditionin variable is used, add it as bias to input x
         if conditioning_var is not None:
             x = x + self.conv_conditioner(conditioning_var)
         x_tanh, x_sigmoid = x.chunk(2, dim=1)
@@ -115,30 +120,31 @@ class DiffWave(torch.nn.Module):
         self.with_conditioner = with_conditioning
         self.n_mels = n_mels
 
-        #conditioning_var
+        #check if conditioning is used and set conditioner
         if with_conditioning:
             self.conditioner_block = SpectrogramConditioner()
 
-        #in
+        #layer that projects diffusion timestep into latent space
         self.timestep_in = DiffusionEmbedding(len(VARIANCE_SCHEDULE))
 
-
+        #input layer before DiffWave blocks
         self.waveform_in = torch.nn.Sequential(
             Conv1d(1, residual_channels, 1),
             torch.nn.ReLU()
         )
 
-        #blocks
+        #DiffWave blocks
         self.blocks = torch.nn.ModuleList()
         for i in range(num_blocks):
             self.blocks.append(DiffWaveBlock(i, residual_channels, layer_width, dilation_mod=dilation_mod, with_conditioning=with_conditioning))
 
-        #out
+        #outgoing layers
         self.out = torch.nn.Sequential(
             Conv1d(residual_channels, residual_channels, 1), 
             torch.nn.ReLU(),
             Conv1d(residual_channels, 1, 1))
 
+    #forward pass according to DiffWave paper
     def forward(self, x, t, conditioning_var=None):
         #conditioning variable (spectrogram) input
         if conditioning_var is not None:
@@ -156,11 +162,12 @@ class DiffWave(torch.nn.Module):
             x, skip_connection = block.forward(x, t, conditioning_var=conditioning_var)
             skip = skip_connection if skip is None else skip_connection + skip
         skip = skip / np.sqrt(len(self.blocks)) #divide by sqrt of number of blocks as in paper Github code
+        
         #out
         x = self.out(x)
         return x
 
-
+    #generate a sample from noise input
     def sample(self, x_t, conditioning_var=None):
         with torch.no_grad():
 
