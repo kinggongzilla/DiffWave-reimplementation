@@ -7,8 +7,6 @@ from torch.utils.data import Dataset
 import torchaudio
 from config import SAMPLE_RATE
 
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-
 class ChunkedData(Dataset):
 
     def __init__(self, audio_dir, conditional_dir=None, max_samples=None) -> None:

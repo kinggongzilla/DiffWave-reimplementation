@@ -1,10 +1,11 @@
-import math
-import torch
-import torch.nn.functional as F
-from tqdm import tqdm
-import torchaudio
 import numpy as np
-from config import VARIANCE_SCHEDULE, N_MELS
+import torch
+import torchaudio
+import torch.nn.functional as F
+import pytorch_lightning as pl
+from tqdm import tqdm
+import wandb
+from config import VARIANCE_SCHEDULE, N_MELS, TIME_STEPS, WITH_CONDITIONING, LEARNING_RATE
 
 def Conv1d(*args, **kwargs):
   layer = torch.nn.Conv1d(*args, **kwargs)
@@ -51,11 +52,11 @@ class DiffusionEmbedding(torch.nn.Module):
 class SpectrogramConditioner(torch.nn.Module):
     def __init__(self):
         super().__init__()
-        # self.conv1 = torch.nn.ConvTranspose2d(1, 1, kernel_size=(3,12), stride=(1, 7), padding=(1, 128)) #tanspose conv shapes for speech samples
-        self.conv1 = torch.nn.ConvTranspose2d(1, 1, kernel_size=(3,12), stride=(1, 7), padding=(1, 128))
+        self.conv1 = torch.nn.ConvTranspose2d(1, 1, kernel_size=(3,12), stride=(1, 7), padding=(1, 128)) #tanspose conv shapes for speech samples
+        # self.conv1 = torch.nn.ConvTranspose2d(1, 1, kernel_size=(3,12), stride=(1, 7), padding=(1, 128))
         self.acivation1 = torch.nn.LeakyReLU(0.4)
-        # self.conv2 = torch.nn.ConvTranspose2d(1, 1, kernel_size=(3,12), stride=(1, 15), padding=(1, 229), output_padding=(0, 1)) #transpose conv shapes for speech samples
-        self.conv2 = torch.nn.ConvTranspose2d(1, 1, kernel_size=(3,12), stride=(1, 7), padding=(1, 29))
+        self.conv2 = torch.nn.ConvTranspose2d(1, 1, kernel_size=(3,12), stride=(1, 15), padding=(1, 229), output_padding=(0, 1)) #transpose conv shapes for speech samples
+        # self.conv2 = torch.nn.ConvTranspose2d(1, 1, kernel_size=(3,12), stride=(1, 7), padding=(1, 29))
         self.acivation2 = torch.nn.LeakyReLU(0.4)
 
     #project spectrogram into latent space
@@ -200,3 +201,43 @@ class DiffWave(torch.nn.Module):
         return x_t 
 
 
+class LitModel(pl.LightningModule):
+    def __init__(self, model):
+        super().__init__()
+        self.model = model
+    def training_step(self, batch, batch_idx):
+        #get waveform from (waveform, sample_rate) tuple;
+        waveform = batch[0] # batch size, channels, length 
+
+        #generate noise
+        noise = torch.randn(waveform.shape) 
+
+        #generate random integer between 1 and number of diffusion timesteps
+        t = torch.randint(1, TIME_STEPS, (1,))
+
+        #define scaling factors for original waveform and noise
+        beta = VARIANCE_SCHEDULE[t]
+        alpha = 1-beta
+        alpha_t = alpha**t
+
+        #create noisy version of original waveform
+        waveform = torch.sqrt(alpha_t)*waveform + torch.sqrt(1-alpha_t)*noise
+
+        conditioning_var = None
+        if WITH_CONDITIONING:
+            # get conditioning_var (spectrogram) from (waveform, sample_rate, spectrogram) tuple;
+            conditioning_var = batch[2] # batch size, channels, length
+
+        # predict noise at diffusion timestep t
+        y_pred = self.model.forward(waveform, t, conditioning_var)
+
+        #calculate loss, barward pass and optimizer step
+        batch_loss = F.mse_loss(y_pred, noise)
+        # wandb.log({"batch_loss": batch_loss})
+
+        return batch_loss
+    
+    def configure_optimizers(self):
+        optimizer = torch.optim.Adam(self.model.parameters(), lr=LEARNING_RATE)
+        lr_scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=1)
+        return [optimizer], [lr_scheduler]

@@ -3,10 +3,10 @@ import sys
 import torch
 import torch.nn.functional as F
 from torch.utils.data import Dataset
+import pytorch_lightning as pl
 import wandb
-from model import DiffWave
+from model import DiffWave, LitModel
 from dataset import ChunkedData
-from train import train
 from config import EPOCHS, BATCH_SIZE, LEARNING_RATE, NUM_BLOCKS, RES_CHANNELS, TIME_STEPS, VARIANCE_SCHEDULE, TIMESTEP_LAYER_WIDTH, SAMPLE_RATE, SAMPLE_LENGTH_SECONDS, MAX_SAMPLES, WITH_CONDITIONING, N_MELS
 
 #start with empty cache
@@ -24,23 +24,30 @@ if len(sys.argv) > 2:
     conditional_path = sys.argv[2]
 
 #initialize wandb
-wandb.init(
-    project="DiffWave", 
-    entity="daavidhauser",
-    config = {
-    "learning_rate": LEARNING_RATE,
-    "epochs": EPOCHS,
-    "batch_size": BATCH_SIZE,
-    "num_blocks": NUM_BLOCKS,
-    "res_channels": RES_CHANNELS,
-    "time_steps": TIME_STEPS,
-    "variance_schedule": VARIANCE_SCHEDULE,
-    "timestep_layer_width": TIMESTEP_LAYER_WIDTH,
-    "sample_rate": SAMPLE_RATE,
-    "sample_length_seconds": SAMPLE_LENGTH_SECONDS,
-    "max_samples": MAX_SAMPLES,
-    "with_conditional": WITH_CONDITIONING
-    }
+# wandb.init(
+#     project="DiffWave", 
+#     entity="daavidhauser",
+#     config = {
+#     "learning_rate": LEARNING_RATE,
+#     "epochs": EPOCHS,
+#     "batch_size": BATCH_SIZE,
+#     "num_blocks": NUM_BLOCKS,
+#     "res_channels": RES_CHANNELS,
+#     "time_steps": TIME_STEPS,
+#     "variance_schedule": VARIANCE_SCHEDULE,
+#     "timestep_layer_width": TIMESTEP_LAYER_WIDTH,
+#     "sample_rate": SAMPLE_RATE,
+#     "sample_length_seconds": SAMPLE_LENGTH_SECONDS,
+#     "max_samples": MAX_SAMPLES,
+#     "with_conditional": WITH_CONDITIONING
+#     }
+# )
+
+checkpoint_callback = pl.ModelCheckpoint(
+    monitor='train_loss',
+    mode='min',
+    dirpath='output/models/',
+    save_top_k=3,
 )
 
 #initialize dataset
@@ -55,10 +62,11 @@ trainloader = torch.utils.data.DataLoader(
 
 #initialize model
 model = DiffWave(RES_CHANNELS, NUM_BLOCKS, TIME_STEPS, VARIANCE_SCHEDULE, WITH_CONDITIONING, N_MELS, layer_width=TIMESTEP_LAYER_WIDTH)
-optimizer = torch.optim.Adam(model.parameters(), lr=LEARNING_RATE)
+lit_model = LitModel(model)
 
 #train model
-train(model, optimizer,trainloader, EPOCHS, TIME_STEPS, VARIANCE_SCHEDULE)
+trainer = pl.Trainer(default_root_dir="output/models/", max_epochs=EPOCHS, gpus=4, logger=wandb)
+trainer.fit(model=lit_model, train_dataloaders=trainloader)
 
 #generate a sample directly after training
 import sample as sample

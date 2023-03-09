@@ -1,7 +1,7 @@
 import torch
 import numpy as np
 
-EPOCHS = 3000
+EPOCHS = 1
 BATCH_SIZE = 6 #16
 LEARNING_RATE = 2 * 1e-4 * np.sqrt(6/16) #downscale learning rate. by multiplying with sqrt(batch_size/original_batch_size) due to reduced batch size
 NUM_BLOCKS = 36 #36

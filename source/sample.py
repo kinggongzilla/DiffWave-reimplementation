@@ -4,13 +4,13 @@ import numpy as np
 import torch
 import torchaudio
 import wandb
-from model import DiffWave
+from model import DiffWave, LitModel
 from config import NUM_BLOCKS, RES_CHANNELS, TIME_STEPS, VARIANCE_SCHEDULE, TIMESTEP_LAYER_WIDTH, SAMPLE_RATE, SAMPLE_LENGTH_SECONDS, N_MELS, WITH_CONDITIONING
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
 #default path to model used for sampling/inference
-model_path = "output/models/best_model.pt"
+checkpoint = "./output/models/lightning_logs/version_1/checkpoints/epoch=0-step=1.ckpt" #TODO: this path probably has to be adjusted to correct filename
 
 if WITH_CONDITIONING:
     #default to using first file in mel_spectrogram folder as conditioning variable
@@ -18,7 +18,7 @@ if WITH_CONDITIONING:
 
 #get path to model, if given as argument
 if len(sys.argv) > 1:
-    model_path = sys.argv[1]
+    checkpoint = sys.argv[1]
 
 #get path to conditioning variable file, if given as argument
 if len(sys.argv) > 2:
@@ -26,8 +26,12 @@ if len(sys.argv) > 2:
 
 
 #load trained model
-model = DiffWave(RES_CHANNELS, NUM_BLOCKS, TIME_STEPS, VARIANCE_SCHEDULE, WITH_CONDITIONING, N_MELS,)
-model.load_state_dict(torch.load(model_path, map_location=device))
+diffwave = DiffWave(RES_CHANNELS, NUM_BLOCKS, TIME_STEPS, VARIANCE_SCHEDULE, WITH_CONDITIONING, N_MELS,)
+trained_diffwave = LitModel.load_from_checkpoint(checkpoint, model=diffwave)
+
+
+# choose your trained nn.Module
+model = trained_diffwave.model
 model.eval()
 
 #load conditioning variable (spectrogram)
