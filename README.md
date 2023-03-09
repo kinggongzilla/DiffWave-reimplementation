@@ -28,6 +28,6 @@ Sometimes, when using different audio datasets, the mel spectrograms generated b
 
 # Download dataset from JKU CP student1 server
 1. Make sure you have an account on the JKU CP student1 server
-2. run "scp -r username@student1.cp.jku.at:../home/davidh/data/chunked_audio ./", to download the audio dataset folder to your current directory. Make sure to replace "username" with your username.
-3. run "scp -r username@student1.cp.jku.at:../home/davidh/data/mel_spectrograms ./", to download the mel_spectrograms dataset folder to your current directory. Make sure to replace "username" with your username.
+2. run "scp -r username@student1.cp.jku.at:../davidh/data/chunked_audio ./", to download the audio dataset folder to your current directory. Make sure to replace "username" with your username.
+3. run "scp -r username@student1.cp.jku.at:../davidh/data/mel_spectrograms ./", to download the mel_spectrograms dataset folder to your current directory. Make sure to replace "username" with your username.
 4. Move the downloaded folders to the "data" folder in the root directory of the project
