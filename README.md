@@ -14,8 +14,8 @@ Default output folder for mel spectrograms is "data/mel_spectrograms"
 
 1. Set up a folder "raw_samples" in root directory, containing audio files (.mp3 or .wav) that should be used as training data
 2. Make sure that "data/chunked_audio" and "data/mel_spectrograms" folders exist. If not, create them.
-3. Run "python data_prep.py" to chop samples in "raw_samples" into 4 second snippets and save to "data/chunked_audio" and spectrograms to "data/mel_spectrograms"
-4. Optional: To pass different input/output folders run "python data_prep.py [path to audio_folder] [path to output_folder]"
+3. Run "python source/data_prep.py" to chop samples in "raw_samples" into 4 second snippets and save to "data/chunked_audio" and spectrograms to "data/mel_spectrograms"
+4. Optional: To pass different input/output folders run "python source/data_prep.py [path to audio_folder] [path to output_folder]"
 
 # How to train a model
 All samples used for training have to be of the SAME length and in the same folder (default: "data/chunked_audio")). Samples have to be either .mp3 or .wave .
