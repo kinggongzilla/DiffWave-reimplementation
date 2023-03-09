@@ -4,6 +4,7 @@ import torch
 import torch.nn.functional as F
 from torch.utils.data import Dataset
 import pytorch_lightning as pl
+from pytorch_lightning.callbacks import ModelCheckpoint
 import wandb
 from model import DiffWave, LitModel
 from dataset import ChunkedData
@@ -43,7 +44,7 @@ if len(sys.argv) > 2:
 #     }
 # )
 
-checkpoint_callback = pl.ModelCheckpoint(
+checkpoint_callback = ModelCheckpoint(
     monitor='train_loss',
     mode='min',
     dirpath='output/models/',
