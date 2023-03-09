@@ -6,6 +6,7 @@ from torch.utils.data import Dataset
 import pytorch_lightning as pl
 from pytorch_lightning.callbacks import ModelCheckpoint
 import wandb
+from pytorch_lightning.loggers import WandbLogger
 from model import DiffWave, LitModel
 from dataset import ChunkedData
 from config import EPOCHS, BATCH_SIZE, LEARNING_RATE, NUM_BLOCKS, RES_CHANNELS, TIME_STEPS, VARIANCE_SCHEDULE, TIMESTEP_LAYER_WIDTH, SAMPLE_RATE, SAMPLE_LENGTH_SECONDS, MAX_SAMPLES, WITH_CONDITIONING, N_MELS
@@ -24,7 +25,10 @@ if len(sys.argv) > 1:
 if len(sys.argv) > 2:
     conditional_path = sys.argv[2]
 
+
+
 #initialize wandb
+wandb_logger = WandbLogger()
 # wandb.init(
 #     project="DiffWave", 
 #     entity="daavidhauser",
@@ -66,7 +70,7 @@ model = DiffWave(RES_CHANNELS, NUM_BLOCKS, TIME_STEPS, VARIANCE_SCHEDULE, WITH_C
 lit_model = LitModel(model)
 
 #train model
-trainer = pl.Trainer(default_root_dir="output/models/", max_epochs=EPOCHS, gpus=4, logger=wandb)
+trainer = pl.Trainer(default_root_dir="output/models/", max_epochs=EPOCHS, gpus=4, logger=wandb_logger)
 trainer.fit(model=lit_model, train_dataloaders=trainloader)
 
 #generate a sample directly after training
