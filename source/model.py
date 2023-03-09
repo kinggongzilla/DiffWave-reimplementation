@@ -239,8 +239,7 @@ class LitModel(pl.LightningModule):
 
         #calculate loss, barward pass and optimizer step
         batch_loss = F.mse_loss(y_pred, noise)
-        # wandb.log({"batch_loss": batch_loss})
-
+        self.log('train_loss', batch_loss, on_epoch=True)
         return batch_loss
     
     def configure_optimizers(self):

@@ -52,7 +52,8 @@ checkpoint_callback = ModelCheckpoint(
     monitor='train_loss',
     mode='min',
     dirpath='output/models/',
-    save_top_k=3,
+    filename='best_model',
+    save_top_k=1,
 )
 
 #initialize dataset
@@ -70,7 +71,7 @@ model = DiffWave(RES_CHANNELS, NUM_BLOCKS, TIME_STEPS, VARIANCE_SCHEDULE, WITH_C
 lit_model = LitModel(model)
 
 #train model
-trainer = pl.Trainer(default_root_dir="output/models/", max_epochs=EPOCHS, auto_select_gpus=True, logger=wandb_logger)
+trainer = pl.Trainer(callbacks=[checkpoint_callback], max_epochs=EPOCHS, auto_select_gpus=True, logger=wandb_logger)
 trainer.fit(model=lit_model, train_dataloaders=trainloader)
 
 #generate a sample directly after training

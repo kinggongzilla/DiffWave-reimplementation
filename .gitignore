@@ -19,3 +19,4 @@ best_model.pt
 source/config.py
 test.ipynb
 sample*
+output/models/best_model.ckpt

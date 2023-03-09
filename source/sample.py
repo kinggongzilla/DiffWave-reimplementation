@@ -10,7 +10,7 @@ from config import NUM_BLOCKS, RES_CHANNELS, TIME_STEPS, VARIANCE_SCHEDULE, TIME
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
 #default path to model used for sampling/inference
-checkpoint = "./output/models/lightning_logs/version_1/checkpoints/epoch=0-step=1.ckpt" #TODO: this path probably has to be adjusted to correct filename
+checkpoint = "./output/models/best_model.ckpt" #TODO: this path probably has to be adjusted to correct filename
 
 if WITH_CONDITIONING:
     #default to using first file in mel_spectrogram folder as conditioning variable
