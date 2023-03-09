@@ -210,7 +210,7 @@ class LitModel(pl.LightningModule):
         waveform = batch[0] # batch size, channels, length 
 
         #generate noise
-        noise = torch.randn(waveform.shape) 
+        noise = torch.randn(waveform.shape)
 
         #generate random integer between 1 and number of diffusion timesteps
         t = torch.randint(1, TIME_STEPS, (1,))
@@ -219,6 +219,12 @@ class LitModel(pl.LightningModule):
         beta = VARIANCE_SCHEDULE[t]
         alpha = 1-beta
         alpha_t = alpha**t
+
+
+        #put all tensors on correct device
+        device = self.device
+        alpha_t = alpha_t.to(device)
+        noise = noise.to(device)
 
         #create noisy version of original waveform
         waveform = torch.sqrt(alpha_t)*waveform + torch.sqrt(1-alpha_t)*noise
