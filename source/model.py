@@ -237,12 +237,11 @@ class LitModel(pl.LightningModule):
         # predict noise at diffusion timestep t
         y_pred = self.model.forward(waveform, t, conditioning_var)
 
-        #calculate loss, barward pass and optimizer step
+        #calculate loss and return loss
         batch_loss = F.mse_loss(y_pred, noise)
         self.log('train_loss', batch_loss, on_epoch=True)
         return batch_loss
     
     def configure_optimizers(self):
         optimizer = torch.optim.Adam(self.model.parameters(), lr=LEARNING_RATE)
-        lr_scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=1)
-        return [optimizer], [lr_scheduler]
+        return [optimizer], []

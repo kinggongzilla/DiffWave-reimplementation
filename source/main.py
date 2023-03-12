@@ -28,25 +28,24 @@ if len(sys.argv) > 2:
 
 
 #initialize wandb
-wandb_logger = WandbLogger()
-# wandb.init(
-#     project="DiffWave", 
-#     entity="daavidhauser",
-#     config = {
-#     "learning_rate": LEARNING_RATE,
-#     "epochs": EPOCHS,
-#     "batch_size": BATCH_SIZE,
-#     "num_blocks": NUM_BLOCKS,
-#     "res_channels": RES_CHANNELS,
-#     "time_steps": TIME_STEPS,
-#     "variance_schedule": VARIANCE_SCHEDULE,
-#     "timestep_layer_width": TIMESTEP_LAYER_WIDTH,
-#     "sample_rate": SAMPLE_RATE,
-#     "sample_length_seconds": SAMPLE_LENGTH_SECONDS,
-#     "max_samples": MAX_SAMPLES,
-#     "with_conditional": WITH_CONDITIONING
-#     }
-# )
+wandb_logger = WandbLogger(
+    project="DiffWave", 
+    entity="daavidhauser",
+    config = {
+    "learning_rate": LEARNING_RATE,
+    "epochs": EPOCHS,
+    "batch_size": BATCH_SIZE,
+    "num_blocks": NUM_BLOCKS,
+    "res_channels": RES_CHANNELS,
+    "time_steps": TIME_STEPS,
+    "variance_schedule": VARIANCE_SCHEDULE,
+    "timestep_layer_width": TIMESTEP_LAYER_WIDTH,
+    "sample_rate": SAMPLE_RATE,
+    "sample_length_seconds": SAMPLE_LENGTH_SECONDS,
+    "max_samples": MAX_SAMPLES,
+    "with_conditional": WITH_CONDITIONING
+    }
+)
 
 checkpoint_callback = ModelCheckpoint(
     monitor='train_loss',
