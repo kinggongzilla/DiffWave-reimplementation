@@ -3,9 +3,9 @@ import numpy as np
 
 EPOCHS = 1000000
 BATCH_SIZE = 6 #16
-LEARNING_RATE = 2 * 1e-4 * np.sqrt(6/16) #downscale learning rate. by multiplying with sqrt(batch_size/original_batch_size) due to reduced batch size
+LEARNING_RATE = 2 * 1e-4
 NUM_BLOCKS = 36 #36
-RES_CHANNELS = 64 #256
+RES_CHANNELS = 256 #reduce to 128 or 64 if you get CUDA out of memory
 TIMESTEP_LAYER_WIDTH = 512 #512
 TIME_STEPS = 200
 VARIANCE_SCHEDULE = torch.linspace(10e-4, 0.02, TIME_STEPS) #torch.linspace(10e-4, 0.05, TIME_STEPS)
