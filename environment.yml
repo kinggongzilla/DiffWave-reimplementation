@@ -1,7 +1,9 @@
 name: practical_work
 channels:
+  - conda-forge
   - defaults
 dependencies:
+  - jupyter
   - torchaudio
   - pysoundfile
   - pydub
