@@ -1,4 +1,4 @@
-name: practical_work_test
+name: practical_work
 channels:
   - defaults
 dependencies:
@@ -7,4 +7,4 @@ dependencies:
   - pydub
   - ffmpeg
   - pytorch-lightning
-prefix: C:\Users\hause\miniconda3\envs\practical_work_test
+prefix: C:\Users\hause\miniconda3\envs\practical_work
