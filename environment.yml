@@ -1,0 +1,11 @@
+name: practical_work
+channels:
+  - defaults
+dependencies:
+  - jupyter
+  - torchaudio
+  - pysoundfile
+  - pydub
+  - ffmpeg
+  - pytorch-lightning
+prefix: C:\Users\hause\miniconda3\envs\practical_work

@@ -2,7 +2,7 @@
 A custom DiffWave reimplementation for the Practical Work in AI course at JKU. 
 
 # Set up environment with dependencies
-1. Load conda env with "conda create -n <environment-name> --file req.txt"
+1. Load conda env with "conda env create -f environment.yml"
 2. Activate conda environment with "conda activate <environment-name>"
 3. If on Mac/Linux install sox with "conda install -c conda-forge sox" (a dependency of torchaudio)
 
