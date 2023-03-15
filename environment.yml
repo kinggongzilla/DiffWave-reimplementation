@@ -2,6 +2,7 @@ name: practical_work
 channels:
   - conda-forge
   - defaults
+  - pytorch
 dependencies:
   - jupyter
   - torchaudio
