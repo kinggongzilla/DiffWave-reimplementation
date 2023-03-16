@@ -1,7 +1,7 @@
 import torch
 import numpy as np
 
-EPOCHS = 666
+EPOCHS = 666 # 666 epochs = 1 Mio steps for batch size 6 and 9k samples
 BATCH_SIZE = 6 #16
 LEARNING_RATE = 2 * 1e-4
 NUM_BLOCKS = 36 #36
