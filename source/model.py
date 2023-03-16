@@ -179,6 +179,7 @@ class DiffWave(torch.nn.Module):
             alpha = 1 - beta
             alpha_cum = np.cumprod(alpha)
 
+            #code below calculates the time steps for the diffusion process; relevant for FAST sampling
             T = []
             for s in range(len(self.variance_schedule)):
                 for t in range(len(self.variance_schedule) - 1):
@@ -188,7 +189,7 @@ class DiffWave(torch.nn.Module):
                         break
             T = np.array(T, dtype=np.float32)
 
-
+            #code below actually performs the sampling
             for n in tqdm(range(len(alpha) - 1, -1, -1)):
                 c1 = 1 / alpha[n]**0.5
                 c2 = beta[n] / (1 - alpha_cum[n])**0.5
