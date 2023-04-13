@@ -4,11 +4,11 @@ import numpy as np
 EPOCHS = 3000
 BATCH_SIZE = 6 #16
 LEARNING_RATE = 2 * 1e-4 * np.sqrt(6/16) #downscale learning rate. by multiplying with sqrt(batch_size/original_batch_size) due to reduced batch size
-NUM_BLOCKS = 36 #36
+NUM_BLOCKS = 5 #36
 RES_CHANNELS = 64 #256
 TIMESTEP_LAYER_WIDTH = 512 #512
 TIME_STEPS = 200
-VARIANCE_SCHEDULE = torch.linspace(10e-4, 0.02, TIME_STEPS) #torch.linspace(10e-4, 0.05, TIME_STEPS)
+VARIANCE_SCHEDULE = torch.linspace(1e-4, 0.02, TIME_STEPS) #torch.linspace(10e-4, 0.05, TIME_STEPS)
 SAMPLE_RATE = 8000 #16000 #22050 #44100
 SAMPLE_LENGTH_SECONDS = 4
 MAX_SAMPLES = 1 #9000 # Use "None" for all samples in data input folder; 1000 = ~1h 6min

@@ -42,12 +42,12 @@ def train(model, optimizer, trainloader, epochs, timesteps, variance_schedule, l
             t = torch.randint(1, timesteps, (1,))
 
             #define scaling factors for original waveform and noise
-            beta = variance_schedule[t]
+            beta = variance_schedule
             alpha = 1-beta
-            alpha_t = alpha**t
+            alpha_t = np.cumprod(alpha)
 
             #create noisy version of original waveform
-            waveform = torch.sqrt(alpha_t)*waveform + torch.sqrt(1-alpha_t)*noise
+            waveform = torch.sqrt(alpha_t[t])*waveform + torch.sqrt(1-alpha_t[t])*noise
 
             waveform = waveform.to(device)
             t = t.to(device)
