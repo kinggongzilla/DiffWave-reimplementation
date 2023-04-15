@@ -229,7 +229,7 @@ class LitModel(pl.LightningModule):
         noise = noise.to(device)
 
         #create noisy version of original waveform
-        waveform = torch.sqrt(alpha_cum)*waveform + torch.sqrt(1-alpha_cum)*noise
+        waveform = torch.sqrt(alpha_cum[t])*waveform + torch.sqrt(1-alpha_cum[t])*noise
 
         conditioning_var = None
         if WITH_CONDITIONING:
