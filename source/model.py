@@ -217,18 +217,19 @@ class LitModel(pl.LightningModule):
         t = torch.randint(1, TIME_STEPS, (1,))
 
         #define scaling factors for original waveform and noise
-        beta = VARIANCE_SCHEDULE[t]
-        alpha = 1-beta
-        alpha_t = alpha**t
+
+        beta = self.variance_schedule
+        alpha = 1 - beta
+        alpha_cum = np.cumprod(alpha)
 
 
         #put all tensors on correct device
         device = self.device
-        alpha_t = alpha_t.to(device)
+        alpha_cum = alpha_cum.to(device)
         noise = noise.to(device)
 
         #create noisy version of original waveform
-        waveform = torch.sqrt(alpha_t)*waveform + torch.sqrt(1-alpha_t)*noise
+        waveform = torch.sqrt(alpha_cum)*waveform + torch.sqrt(1-alpha_cum)*noise
 
         conditioning_var = None
         if WITH_CONDITIONING:
