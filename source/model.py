@@ -218,7 +218,7 @@ class LitModel(pl.LightningModule):
 
         #define scaling factors for original waveform and noise
 
-        beta = self.variance_schedule
+        beta = VARIANCE_SCHEDULE
         alpha = 1 - beta
         alpha_cum = np.cumprod(alpha)
 
