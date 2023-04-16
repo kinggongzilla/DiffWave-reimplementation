@@ -172,26 +172,13 @@ class DiffWave(torch.nn.Module):
     def sample(self, x_t, conditioning_var=None):
         with torch.no_grad():
 
-            talpha = 1 - self.variance_schedule
-            talpha_cum = np.cumprod(talpha)
-
             beta = self.variance_schedule
             alpha = 1 - beta
             alpha_cum = np.cumprod(alpha)
 
-            #code below calculates the time steps for the diffusion process; relevant for FAST sampling
-            T = []
-            for s in range(len(self.variance_schedule)):
-                for t in range(len(self.variance_schedule) - 1):
-                    if talpha_cum[t+1] <= alpha_cum[s] <= talpha_cum[t]:
-                        twiddle = (talpha_cum[t]**0.5 - alpha_cum[s]**0.5) / (talpha_cum[t]**0.5 - talpha_cum[t+1]**0.5)
-                        T.append(t + twiddle)
-                        break
-            T = np.array(T, dtype=np.float32)
-
             #code below actually performs the sampling
             for n in tqdm(range(len(alpha) - 1, -1, -1)):
-                c1 = 1 / alpha[n]**0.5
+                c1 = 1 / alpha[n]**0.5 # c1 approaches 1 as timestep gets closer to 0
                 c2 = beta[n] / (1 - alpha_cum[n])**0.5
                 x_t = c1 * (x_t - c2 * self.forward(x_t, torch.tensor(n), conditioning_var).squeeze(1))
                 if n > 0:
@@ -214,7 +201,7 @@ class LitModel(pl.LightningModule):
         noise = torch.randn(waveform.shape)
 
         #generate random integer between 1 and number of diffusion timesteps
-        t = torch.randint(1, TIME_STEPS, (1,))
+        t = torch.randint(0, TIME_STEPS, (1,))
 
         #define scaling factors for original waveform and noise
 
@@ -240,7 +227,7 @@ class LitModel(pl.LightningModule):
         y_pred = self.model.forward(waveform, t, conditioning_var)
 
         #calculate loss and return loss
-        batch_loss = F.mse_loss(y_pred, noise)
+        batch_loss = F.mse_loss(y_pred, torch.sqrt(1-alpha_cum[t])*noise)
         self.log('train_loss', batch_loss, on_epoch=True)
         return batch_loss
     
