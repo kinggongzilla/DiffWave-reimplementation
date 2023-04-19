@@ -18,3 +18,12 @@ Loss stopped going down after first 10k steps (out of 20k). Produces only noise 
 
 6. Reduced sample rate to 8k. Now able to load model with 1.6M parameters and batch size 8, with 4 second samples into memory. 
 Paper uses ~24M params for unconditional model?? I will train on 900 samples (=1h of audio) for 500 epochs. In paper they trained for 1M steps!!
+
+
+
+
+16.4.2021
+fixed variance schedule from np.linspace(10e-4,0.02) to np.linspace(1e-4,0.02)
+
+20.4.2023
+THE ISSUE WAS THAT WHEN A NEW PYTORCH LIGHTNING RUN IS STARTED THE NEW MODEL IS NOT SAVED AS OUTPUT/MODELS/BEST_MODEL.PT BUT AS OUTPUT/MODELS/BEST_MODEL-V1.PT, IF BEST_MODEL.PT ALREADY EXISTS!!!
