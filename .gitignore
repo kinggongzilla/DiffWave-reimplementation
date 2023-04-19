@@ -19,3 +19,8 @@ best_model.pt
 source/config.py
 test.ipynb
 sample*
+official_diffwave_speech_10ksteps_6samples_batchsize6.wav
+data/speech_data/speech1_1.wav
+lightning_logs/version_1/hparams.yaml
+ljspeech/*
+ljspeech_16k/*
