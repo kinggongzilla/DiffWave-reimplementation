@@ -20,3 +20,9 @@ source/config.py
 test.ipynb
 sample*
 output/models/best_model.ckpt
+data/speech_data/speech1_1.wav
+lightning_logs/version_1/hparams.yaml
+official_diffwave_speech_10ksteps_6samples_batchsize6.wav
+
+ljspeech/*
+ljspeech_16k/*
