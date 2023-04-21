@@ -227,7 +227,7 @@ class LitModel(pl.LightningModule):
         y_pred = self.model.forward(waveform, t, conditioning_var)
 
         #calculate loss and return loss
-        batch_loss = F.mse_loss(y_pred, noise)
+        batch_loss = F.l1_loss(y_pred, noise)
         self.log('train_loss', batch_loss, on_epoch=True)
         return batch_loss
     
