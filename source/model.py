@@ -112,7 +112,7 @@ class DiffWaveBlock(torch.nn.Module):
 
 
 class DiffWave(torch.nn.Module):
-    def __init__(self, residual_channels, num_blocks, timesteps, variance_schedule, with_conditioning, n_mels, layer_width=512, dilation_mod=12, ) -> None:
+    def __init__(self, residual_channels, num_blocks, timesteps, variance_schedule, with_conditioning, n_mels, layer_width=512, dilation_mod=10, ) -> None:
         super().__init__()
         self.timesteps = timesteps
         self.variance_schedule = variance_schedule
