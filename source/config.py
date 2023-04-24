@@ -11,7 +11,7 @@ TIME_STEPS = 50
 VARIANCE_SCHEDULE = torch.linspace(1e-4, 0.05, TIME_STEPS) #torch.linspace(10e-4, 0.05, TIME_STEPS)
 SAMPLE_RATE = 8000 #16000 #22050 #44100
 SAMPLE_LENGTH_SECONDS = 4
-MAX_SAMPLES = 1 #9000 # Use "None" for all samples in data input folder; 1000 = ~1h 6min
+MAX_SAMPLES = 9000 #9000 # Use "None" for all samples in data input folder; 1000 = ~1h 6min
 WITH_CONDITIONING=True
 
 #CONFIG DATA PREP TRANSFORM TO MEL SPECTROGRAM
