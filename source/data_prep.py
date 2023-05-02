@@ -54,7 +54,8 @@ def chop_wav(song_id: str, audio_path: str, out_dir: str, length: int):
     if not os.path.isfile(audio_path):
         raise 'given wav_path is not a file'
 
-    #load mp3 audio from audio_path with torchaudio    audio = torchaudio.load(audio_path)[0][0]
+    #load mp3 audio from audio_path with torchaudio
+    audio = torchaudio.load(audio_path)[0][0]
     audio = torchaudio.transforms.Resample(44100, 22050)(audio)
 
     #check if file ending is .mp3 or .wav
