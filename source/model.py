@@ -52,11 +52,9 @@ class DiffusionEmbedding(torch.nn.Module):
 class SpectrogramConditioner(torch.nn.Module):
     def __init__(self):
         super().__init__()
-        # self.conv1 = torch.nn.ConvTranspose2d(1, 1, kernel_size=(3,12), stride=(1, 7), padding=(1, 128)) #tanspose conv shapes for speech samples
-        self.conv1 = torch.nn.ConvTranspose2d(1, 1, kernel_size=(3,12), stride=(1, 7), padding=(1, 128))
+        self.conv1 = torch.nn.ConvTranspose2d(1, 1, [3, 32], stride=[1, 16], padding=[1, 8])
         self.acivation1 = torch.nn.LeakyReLU(0.4)
-        # self.conv2 = torch.nn.ConvTranspose2d(1, 1, kernel_size=(3,12), stride=(1, 15), padding=(1, 229), output_padding=(0, 1)) #transpose conv shapes for speech samples
-        self.conv2 = torch.nn.ConvTranspose2d(1, 1, kernel_size=(3,12), stride=(1, 7), padding=(1, 29))
+        self.conv2 = torch.nn.ConvTranspose2d(1, 1,  [3, 32], stride=[1, 16], padding=[1, 8])
         self.acivation2 = torch.nn.LeakyReLU(0.4)
 
     #project spectrogram into latent space
@@ -95,7 +93,7 @@ class DiffWaveBlock(torch.nn.Module):
         input = x.clone()
         t = self.fc_timestep(t)
         t = t.unsqueeze(-1) # add another dimension at the end
-        t = t.expand(1, 64, 32000) # expand the last dimension to match x
+        t = t.expand(1, 64, 110250) # expand the last dimension to match x; 22050 * 5 = 110250
         x = x + t #broadcast addition
         x = self.conv_dilated(x)
 

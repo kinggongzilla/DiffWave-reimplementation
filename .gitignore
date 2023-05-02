@@ -26,3 +26,4 @@ official_diffwave_speech_10ksteps_6samples_batchsize6.wav
 
 ljspeech/*
 ljspeech_16k/*
+ljspeech_44k/*

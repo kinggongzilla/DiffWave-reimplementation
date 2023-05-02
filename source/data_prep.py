@@ -54,34 +54,33 @@ def chop_wav(song_id: str, audio_path: str, out_dir: str, length: int):
     if not os.path.isfile(audio_path):
         raise 'given wav_path is not a file'
 
-    #load audio
-    if audio_path.endswith('.wav'):
-        audio = AudioSegment.from_wav(audio_path)
-        file_ending = '.wav'
-    elif audio_path.endswith('.mp3'):
-        audio = AudioSegment.from_mp3(audio_path)
+    #load mp3 audio from audio_path with torchaudio    audio = torchaudio.load(audio_path)[0][0]
+    audio = torchaudio.transforms.Resample(44100, 22050)(audio)
+
+    #check if file ending is .mp3 or .wav
+    file_ending = '.wav'
+    if audio_path[-4:] == '.mp3':
         file_ending = '.mp3'
-    else:
-        raise 'wav_path must be a .wav or .mp3 file'
 
     start = 0
     end = length
-    n_iters = int(len(audio)) // (SAMPLE_LENGTH_SECONDS * 1000)
-
+    n_iters = int(len(audio)) // length
 
     for i in range(n_iters):
         #break if max samples reached
         if len(os.listdir(chopped_audio_out_path)) >= (MAX_SAMPLES):
             break
         newAudio = audio[start:end]
-        newAudio.export(os.path.join(out_dir, '{}_{}{}'.format(song_id, start, file_ending)), format="wav")
+        #save newAudio with file_ending to out_dir with torchaudio
+        torchaudio.save(os.path.join(out_dir, '{}_{}{}'.format(song_id, start, file_ending)), newAudio, SAMPLE_RATE)
+
         start += length
         end += length
 
 if __name__ == '__main__':
     in_path=os.path.join('raw_samples')
     chopped_audio_out_path=os.path.join('data/chunked_audio')
-    sample_length = SAMPLE_LENGTH_SECONDS * 1000 #milliseconds
+    sample_length = SAMPLE_LENGTH_SECONDS * SAMPLE_RATE
 
     if len(sys.argv) > 1:
         in_path = sys.argv[1]

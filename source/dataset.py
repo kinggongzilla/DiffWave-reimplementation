@@ -30,7 +30,7 @@ class ChunkedData(Dataset):
         waveform, sample_rate = torchaudio.load(os.path.join(self.audio_dir, audio_file))
 
         #resample if sample rate is higher than SAMPLE_RATE from config.py
-        if sample_rate > SAMPLE_RATE:
+        if sample_rate != SAMPLE_RATE:
             waveform = torchaudio.functional.resample(waveform, orig_freq=sample_rate, new_freq=SAMPLE_RATE)
         waveform = waveform[0:1,:] #get single channel waveform from waveform with two channels; slicing [0:1] to preserve dimensions
         
