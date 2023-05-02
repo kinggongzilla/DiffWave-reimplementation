@@ -99,7 +99,7 @@ class DiffWaveBlock(torch.nn.Module):
 
         #if conditionin variable is used, add it as bias to input x
         if conditioning_var is not None:
-            x = x + self.conv_conditioner(conditioning_var)
+            x = x + self.conv_conditioner(conditioning_var[:,:,:110250])
         x_tanh, x_sigmoid = x.chunk(2, dim=1)
         x_tanh = torch.tanh(x_tanh)
         x_sigmoid = torch.sigmoid(x_sigmoid)
