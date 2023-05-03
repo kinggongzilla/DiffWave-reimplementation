@@ -74,7 +74,7 @@ print(torch.cuda.memory_allocated())
 
 #train model
 # trainer = pl.Trainer(callbacks=[checkpoint_callback], max_epochs=EPOCHS, accelerator='cpu', logger=wandb_logger)
-trainer = pl.Trainer(callbacks=[checkpoint_callback], max_epochs=EPOCHS, gpus=-1, devices='auto', auto_select_gpus=True, strategy="ddp", logger=wandb_logger)
+trainer = pl.Trainer(callbacks=[checkpoint_callback], max_epochs=EPOCHS, gpus=-1, devices='gpu', auto_select_gpus=True, strategy="ddp", logger=wandb_logger)
 
 print('before fitting model')
 print(torch.cuda.memory_allocated())
