@@ -40,6 +40,6 @@ class ChunkedData(Dataset):
             conditional_file = os.listdir(self.conditional_dir)[index]
             conditioning_var = torch.from_numpy(np.load(os.path.join(self.conditional_dir, conditional_file)))
             conditioning_var = conditioning_var[0:1,:, :SAMPLE_RATE*SAMPLE_LENGTH_SECONDS] #get single channel spectrogram slicing [0:1] to preserve dimensions
-            return waveform[:,:,:110250], SAMPLE_RATE, conditioning_var
+            return waveform[:,:SAMPLE_RATE*SAMPLE_LENGTH_SECONDS], SAMPLE_RATE, conditioning_var
         else:
             return waveform, SAMPLE_RATE

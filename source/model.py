@@ -63,7 +63,7 @@ class SpectrogramConditioner(torch.nn.Module):
         spectrogram = self.acivation1(spectrogram)
         spectrogram = self.conv2(spectrogram)
         spectrogram = self.acivation2(spectrogram)
-        return torch.squeeze(spectrogram, 1)
+        return torch.squeeze(spectrogram, 1)[:,:,:SAMPLE_RATE*SAMPLE_LENGTH_SECONDS]
 
 #DiffWave residual block
 class DiffWaveBlock(torch.nn.Module):
@@ -94,7 +94,7 @@ class DiffWaveBlock(torch.nn.Module):
         t = self.fc_timestep(t)
         t = t.unsqueeze(-1) # add another dimension at the end
         t = t.expand(1, 64, SAMPLE_RATE * SAMPLE_LENGTH_SECONDS) # expand the last dimension to match x; 22500 * 5 = 110250
-        x = x + t[:110250] #broadcast addition
+        x = x + t #broadcast addition
         x = self.conv_dilated(x)
 
         #if conditionin variable is used, add it as bias to input x
