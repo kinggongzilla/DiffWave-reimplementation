@@ -227,7 +227,7 @@ class LitModel(pl.LightningModule):
         #create noisy version of original waveform
         waveform = torch.sqrt(alpha_cum[t])*waveform + torch.sqrt(1-alpha_cum[t])*noise
 
-        del alpha_cum, noise, beta, alpha
+        del alpha_cum, beta, alpha
 
         conditioning_var = None
         if WITH_CONDITIONING:
@@ -241,6 +241,9 @@ class LitModel(pl.LightningModule):
 
         #calculate loss and return loss
         batch_loss = F.l1_loss(y_pred, noise)
+
+        del noise
+
         self.log('train_loss', batch_loss, on_epoch=True)
 
         print('end training_step memory allocated: ')
