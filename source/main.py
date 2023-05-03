@@ -69,8 +69,16 @@ trainloader = torch.utils.data.DataLoader(
 model = DiffWave(RES_CHANNELS, NUM_BLOCKS, TIME_STEPS, VARIANCE_SCHEDULE, WITH_CONDITIONING, N_MELS, layer_width=TIMESTEP_LAYER_WIDTH)
 lit_model = LitModel(model)
 
+print('before creating trainer')
+print(torch.cuda.memory_allocated())
+
 #train model
-trainer = pl.Trainer(callbacks=[checkpoint_callback], max_epochs=EPOCHS, gpus=-1, auto_select_gpus=True, strategy="ddp", logger=wandb_logger)
+# trainer = pl.Trainer(callbacks=[checkpoint_callback], max_epochs=EPOCHS, accelerator='cpu', logger=wandb_logger)
+trainer = pl.Trainer(callbacks=[checkpoint_callback], max_epochs=EPOCHS, gpus=-1, devices='auto', auto_select_gpus=True, strategy="ddp", logger=wandb_logger)
+
+print('before fitting model')
+print(torch.cuda.memory_allocated())
+
 trainer.fit(model=lit_model, train_dataloaders=trainloader)
 
 #generate a sample directly after training

@@ -104,6 +104,7 @@ class DiffWaveBlock(torch.nn.Module):
         x = x_tanh * x_sigmoid
         x = self.conv_out(x)
         x, skip = torch.chunk(x, 2, dim=1)
+
         return (x + input) / np.sqrt(2.0), skip
 
 
@@ -162,6 +163,8 @@ class DiffWave(torch.nn.Module):
         
         #out
         x = self.out(x)
+        print('forward DiffWave memory allocated: ')
+        print(torch.cuda.memory_allocated())
         return x
 
     #generate a sample from noise input
@@ -190,6 +193,8 @@ class LitModel(pl.LightningModule):
         super().__init__()
         self.model = model
     def training_step(self, batch, batch_idx):
+        print('beginning training_step memory allocated: ')
+        print(torch.cuda.memory_allocated())
         #get waveform from (waveform, sample_rate) tuple;
         waveform = batch[0] # batch size, channels, length 
 
@@ -205,11 +210,17 @@ class LitModel(pl.LightningModule):
         alpha = 1 - beta
         alpha_cum = np.cumprod(alpha)
 
+        print('before noise.to(device) memory allocated: ')
+        print(torch.cuda.memory_allocated())
+
 
         #put all tensors on correct device
         device = self.device
         alpha_cum = alpha_cum.to(device)
         noise = noise.to(device)
+
+        print('after noise.to(device) memory allocated: ')
+        print(torch.cuda.memory_allocated())
 
         #create noisy version of original waveform
         waveform = torch.sqrt(alpha_cum[t])*waveform + torch.sqrt(1-alpha_cum[t])*noise
@@ -229,6 +240,10 @@ class LitModel(pl.LightningModule):
         #calculate loss and return loss
         batch_loss = F.l1_loss(y_pred, noise)
         self.log('train_loss', batch_loss, on_epoch=True)
+
+        print('end training_step memory allocated: ')
+        print(torch.cuda.memory_allocated())
+
         return batch_loss
     
     def configure_optimizers(self):
