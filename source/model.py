@@ -72,8 +72,6 @@ class DiffWaveBlock(torch.nn.Module):
         self.layer_index = layer_index
         self.residual_channels = residual_channles
         self.layer_width = layer_width
-        self.input = None
-        self.x_skip = None
         self.with_conditioner = with_conditioning
 
         if with_conditioning:
@@ -216,6 +214,8 @@ class LitModel(pl.LightningModule):
         #create noisy version of original waveform
         waveform = torch.sqrt(alpha_cum[t])*waveform + torch.sqrt(1-alpha_cum[t])*noise
 
+        del alpha_cum, noise, beta, alpha
+
         conditioning_var = None
         if WITH_CONDITIONING:
             # get conditioning_var (spectrogram) from (waveform, sample_rate, spectrogram) tuple;
@@ -223,6 +223,8 @@ class LitModel(pl.LightningModule):
 
         # predict noise at diffusion timestep t
         y_pred = self.model.forward(waveform, t, conditioning_var)
+
+        del t
 
         #calculate loss and return loss
         batch_loss = F.l1_loss(y_pred, noise)
