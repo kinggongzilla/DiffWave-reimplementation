@@ -192,6 +192,8 @@ class LitModel(pl.LightningModule):
     def __init__(self, model):
         super().__init__()
         self.model = model
+        print('after init model memory allocated: ')
+        print(torch.cuda.memory_allocated())
     def training_step(self, batch, batch_idx):
         print('beginning training_step memory allocated: ')
         print(torch.cuda.memory_allocated())
