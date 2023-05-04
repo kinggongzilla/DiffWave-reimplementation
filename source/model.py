@@ -117,7 +117,7 @@ class DiffWaveBlock(torch.nn.Module):
         x = x + t #broadcast addition
         
         def conv_dilated_func(x): # wrap conv_dilated in a function
-            return self.conv_dilated(x)
+            return self.conv_dilated(x).requires_grad_(True)
         
         x = torch.utils.checkpoint.checkpoint(conv_dilated_func, x) # use checkpointing to save memory
 
