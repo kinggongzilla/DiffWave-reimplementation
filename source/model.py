@@ -85,30 +85,24 @@ class DiffWaveBlock(torch.nn.Module):
 
         # outgoing convolution laayer
         self.conv_out = Conv1d(residual_channles, 2*residual_channles, 1)
-    
 
     #forward pass, according to architecture in DiffWave paper
     def forward(self, x, t, conditioning_var=None):
-        input = x.detach() # avoid cloning x
+        input = x.clone()
         t = self.fc_timestep(t)
         t = t.unsqueeze(-1) # add another dimension at the end
         t = t.expand(1, 64, SAMPLE_RATE * SAMPLE_LENGTH_SECONDS) # expand the last dimension to match x; 22500 * 5 = 110250
         x = x + t #broadcast addition
-        
         x = self.conv_dilated(x)
 
         #if conditionin variable is used, add it as bias to input x
         if conditioning_var is not None:
             x = x + self.conv_conditioner(conditioning_var)
-        
-        # use torch.cat and slicing instead of torch.chunk
-        x = torch.cat([torch.tanh(x[:, :x.size(1)//2]), torch.sigmoid(x[:, x.size(1)//2:])], dim=1)
-        
-        # use torch.addcmul instead of * and +
-        x = torch.addcmul(torch.zeros_like(x[:, :x.size(1)//2]), value=1, tensor1=x[:, :x.size(1)//2], tensor2=x[:, x.size(1)//2:])
-        
+        x_tanh, x_sigmoid = x.chunk(2, dim=1)
+        x_tanh = torch.tanh(x_tanh)
+        x_sigmoid = torch.sigmoid(x_sigmoid)
+        x = x_tanh * x_sigmoid
         x = self.conv_out(x)
-
         x, skip = torch.chunk(x, 2, dim=1)
 
         return (x + input) / np.sqrt(2.0), skip
