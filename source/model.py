@@ -144,15 +144,26 @@ class DiffWave(torch.nn.Module):
 
     #forward pass according to DiffWave paper
     def forward(self, x, t, conditioning_var=None):
+        print('beginning forward Diffwave:')
+        print(torch.cuda.memory_allocated())
         #conditioning variable (spectrogram) input
         if conditioning_var is not None:
             conditioning_var = self.conditioner_block(conditioning_var)
+        
+        print('after conditioning block in forward Diffwave:')
+        print(torch.cuda.memory_allocated())
 
         #waveform input
         x = self.waveform_in(x)
 
+        print('after waveform_in in forward Diffwave:')
+        print(torch.cuda.memory_allocated())
+
         #time embedding
         t = self.timestep_in(t)
+
+        print('after timestep_in  in forward Diffwave:')
+        print(torch.cuda.memory_allocated())
 
         #blocks
         skip = None
@@ -161,6 +172,9 @@ class DiffWave(torch.nn.Module):
             skip = skip_connection if skip is None else skip_connection + skip
         skip = skip / np.sqrt(len(self.blocks)) #divide by sqrt of number of blocks as in paper Github code
         
+        print('after blocks for loop in forward Diffwave:')
+        print(torch.cuda.memory_allocated())
+
         #out
         x = self.out(x)
         print('forward DiffWave memory allocated: ')
@@ -227,12 +241,18 @@ class LitModel(pl.LightningModule):
         #create noisy version of original waveform
         waveform = torch.sqrt(alpha_cum[t])*waveform + torch.sqrt(1-alpha_cum[t])*noise
 
+        print('after noisy waveform creation: ')
+        print(torch.cuda.memory_allocated())
+
         del alpha_cum, beta, alpha
 
         conditioning_var = None
         if WITH_CONDITIONING:
             # get conditioning_var (spectrogram) from (waveform, sample_rate, spectrogram) tuple;
             conditioning_var = batch[2] # batch size, channels, length
+
+        print('after assigning conditioning_var:')
+        print(torch.cuda.memory_allocated())
 
         # predict noise at diffusion timestep t
         y_pred = self.model.forward(waveform, t, conditioning_var)
