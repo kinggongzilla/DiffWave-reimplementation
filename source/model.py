@@ -106,6 +106,36 @@ class DiffWaveBlock(torch.nn.Module):
         x, skip = torch.chunk(x, 2, dim=1)
 
         return (x + input) / np.sqrt(2.0), skip
+    
+
+    #forward pass, according to architecture in DiffWave paper
+    def forward(self, x, t, conditioning_var=None):
+        input = x.detach() # avoid cloning x
+        t = self.fc_timestep(t)
+        t = t.unsqueeze(-1) # add another dimension at the end
+        t = t.expand(1, 64, SAMPLE_RATE * SAMPLE_LENGTH_SECONDS) # expand the last dimension to match x; 22500 * 5 = 110250
+        x = x + t #broadcast addition
+        
+        def conv_dilated_func(x): # wrap conv_dilated in a function
+            return self.conv_dilated(x)
+        
+        x = torch.utils.checkpoint.checkpoint(conv_dilated_func, x) # use checkpointing to save memory
+
+        #if conditionin variable is used, add it as bias to input x
+        if conditioning_var is not None:
+            x = x + self.conv_conditioner(conditioning_var)
+        
+        # use torch.cat and slicing instead of torch.chunk
+        x = torch.cat([torch.tanh(x[:, :x.size(1)//2]), torch.sigmoid(x[:, x.size(1)//2:])], dim=1)
+        
+        # use torch.addcmul instead of * and +
+        x = torch.addcmul(torch.zeros_like(x[:, :x.size(1)//2]), value=1, tensor1=x[:, :x.size(1)//2], tensor2=x[:, x.size(1)//2:])
+        
+        x = self.conv_out(x)
+
+        x, skip = torch.chunk(x, 2, dim=1)
+
+        return (x + input) / np.sqrt(2.0), skip
 
 
 class DiffWave(torch.nn.Module):
