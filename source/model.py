@@ -88,7 +88,7 @@ class DiffWaveBlock(torch.nn.Module):
 
     #forward pass, according to architecture in DiffWave paper
     def forward(self, x, t, conditioning_var=None):
-        input = x.clone()
+        input = x.detach()
         t = self.fc_timestep(t)
         t = t.unsqueeze(-1) # add another dimension at the end
         t = t.expand(1, 64, SAMPLE_RATE * SAMPLE_LENGTH_SECONDS) # expand the last dimension to match x; 22500 * 5 = 110250
@@ -144,20 +144,12 @@ class DiffWave(torch.nn.Module):
 
     #forward pass according to DiffWave paper
     def forward(self, x, t, conditioning_var=None):
-        print('beginning forward Diffwave:')
-        print(torch.cuda.memory_allocated())
         #conditioning variable (spectrogram) input
         if conditioning_var is not None:
             conditioning_var = self.conditioner_block(conditioning_var)
-        
-        print('after conditioning block in forward Diffwave:')
-        print(torch.cuda.memory_allocated())
 
         #waveform input
         x = self.waveform_in(x)
-
-        print('after waveform_in in forward Diffwave:')
-        print(torch.cuda.memory_allocated())
 
         #time embedding
         t = self.timestep_in(t)
@@ -177,8 +169,6 @@ class DiffWave(torch.nn.Module):
 
         #out
         x = self.out(x)
-        print('forward DiffWave memory allocated: ')
-        print(torch.cuda.memory_allocated())
         return x
 
     #generate a sample from noise input
@@ -206,11 +196,7 @@ class LitModel(pl.LightningModule):
     def __init__(self, model):
         super().__init__()
         self.model = model
-        print('after init model memory allocated: ')
-        print(torch.cuda.memory_allocated())
     def training_step(self, batch, batch_idx):
-        print('beginning training_step memory allocated: ')
-        print(torch.cuda.memory_allocated())
         #get waveform from (waveform, sample_rate) tuple;
         waveform = batch[0] # batch size, channels, length 
 
@@ -226,23 +212,13 @@ class LitModel(pl.LightningModule):
         alpha = 1 - beta
         alpha_cum = np.cumprod(alpha)
 
-        print('before noise.to(device) memory allocated: ')
-        print(torch.cuda.memory_allocated())
-
-
         #put all tensors on correct device
         device = self.device
         alpha_cum = alpha_cum.to(device)
         noise = noise.to(device)
 
-        print('after noise.to(device) memory allocated: ')
-        print(torch.cuda.memory_allocated())
-
         #create noisy version of original waveform
         waveform = torch.sqrt(alpha_cum[t])*waveform + torch.sqrt(1-alpha_cum[t])*noise
-
-        print('after noisy waveform creation: ')
-        print(torch.cuda.memory_allocated())
 
         del alpha_cum, beta, alpha
 
@@ -250,9 +226,6 @@ class LitModel(pl.LightningModule):
         if WITH_CONDITIONING:
             # get conditioning_var (spectrogram) from (waveform, sample_rate, spectrogram) tuple;
             conditioning_var = batch[2] # batch size, channels, length
-
-        print('after assigning conditioning_var:')
-        print(torch.cuda.memory_allocated())
 
         # predict noise at diffusion timestep t
         y_pred = self.model.forward(waveform, t, conditioning_var)
@@ -265,9 +238,6 @@ class LitModel(pl.LightningModule):
         del noise
 
         self.log('train_loss', batch_loss, on_epoch=True)
-
-        print('end training_step memory allocated: ')
-        print(torch.cuda.memory_allocated())
 
         return batch_loss
     
