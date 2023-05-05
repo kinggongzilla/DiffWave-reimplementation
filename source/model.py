@@ -67,45 +67,43 @@ class SpectrogramConditioner(torch.nn.Module):
 
 #DiffWave residual block
 class DiffWaveBlock(torch.nn.Module):
-    def __init__(self, layer_index, residual_channles, layer_width, dilation_mod, with_conditioning: bool) -> None:
+    def __init__(self, n_mels, residual_channels, dilation, uncond=False):
+        '''
+        :param n_mels: inplanes of conv1x1 for spectrogram conditional
+        :param residual_channels: audio conv
+        :param dilation: audio conv dilation
+        :param uncond: disable spectrogram conditional
+        '''
         super().__init__()
-        self.layer_index = layer_index
-        self.residual_channels = residual_channles
-        self.layer_width = layer_width
-        self.with_conditioner = with_conditioning
+        self.dilated_conv = Conv1d(residual_channels, 2 * residual_channels, 3, padding=dilation, dilation=dilation)
+        self.diffusion_projection = torch.nn.Linear(512, residual_channels)
+        if not uncond: # conditional model
+            self.conditioner_projection = Conv1d(n_mels, 2 * residual_channels, 1)
+        else: # unconditional model
+            self.conditioner_projection = None
 
-        if with_conditioning:
-            self.conv_conditioner = Conv1d(N_MELS, 2*residual_channles, 1)
+        self.output_projection = Conv1d(residual_channels, 2 * residual_channels, 1)
 
-        # linear layer that processes diffusion timestep
-        self.fc_timestep = torch.nn.Linear(layer_width, residual_channles)
+    def forward(self, x, diffusion_step, conditioner=None):
+        assert (conditioner is None and self.conditioner_projection is None) or \
+            (conditioner is not None and self.conditioner_projection is not None)
 
-        # bi directional conv
-        self.conv_dilated = Conv1d(residual_channles, 2*residual_channles, 3, dilation=2**(layer_index%dilation_mod), padding='same')
+        diffusion_step = self.diffusion_projection(diffusion_step).unsqueeze(-1)
+        y = x + diffusion_step
+        if self.conditioner_projection is None: # using a unconditional model
+            y = self.dilated_conv(y)
+        else:
+            conditioner = self.conditioner_projection(conditioner)
+            y = self.dilated_conv(y) + conditioner
 
-        # outgoing convolution laayer
-        self.conv_out = Conv1d(residual_channles, 2*residual_channles, 1)
+        gate, filter = torch.chunk(y, 2, dim=1)
+        y = torch.sigmoid(gate) * torch.tanh(filter)
 
-    #forward pass, according to architecture in DiffWave paper
-    def forward(self, x, t, conditioning_var=None):
-        input = x.clone()
-        t = self.fc_timestep(t)
-        t = t.unsqueeze(-1) # add another dimension at the end
-        t = t.expand(1, 64, SAMPLE_RATE * SAMPLE_LENGTH_SECONDS) # expand the last dimension to match x; 22500 * 5 = 110250
-        x = x + t #broadcast addition
-        x = self.conv_dilated(x)
-
-        #if conditionin variable is used, add it as bias to input x
-        if conditioning_var is not None:
-            x = x + self.conv_conditioner(conditioning_var)
-        x_tanh, x_sigmoid = x.chunk(2, dim=1)
-        x_tanh = torch.tanh(x_tanh)
-        x_sigmoid = torch.sigmoid(x_sigmoid)
-        x = x_tanh * x_sigmoid
-        x = self.conv_out(x)
-        x, skip = torch.chunk(x, 2, dim=1)
-
-        return (x + input) / np.sqrt(2.0), skip
+        y = self.output_projection(y)
+        residual, skip = torch.chunk(y, 2, dim=1)
+        return (x + residual) / np.sqrt(2.0), skip
+    
+    
 
 
 class DiffWave(torch.nn.Module):
@@ -134,7 +132,7 @@ class DiffWave(torch.nn.Module):
         #DiffWave blocks
         self.blocks = torch.nn.ModuleList()
         for i in range(num_blocks):
-            self.blocks.append(DiffWaveBlock(i, residual_channels, layer_width, dilation_mod=dilation_mod, with_conditioning=with_conditioning))
+            self.blocks.append(DiffWaveBlock(n_mels, residual_channels, dilation=2**(i % dilation_mod), uncond=False))
 
         #outgoing layers
         self.out = torch.nn.Sequential(
@@ -168,7 +166,7 @@ class DiffWave(torch.nn.Module):
         #blocks
         skip = None
         for block in self.blocks:
-            x, skip_connection = block.forward(x, t, conditioning_var=conditioning_var)
+            x, skip_connection = block.forward(x, t, conditioner=conditioning_var)
             skip = skip_connection if skip is None else skip_connection + skip
         skip = skip / np.sqrt(len(self.blocks)) #divide by sqrt of number of blocks as in paper Github code
         
