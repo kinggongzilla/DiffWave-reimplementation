@@ -1,7 +1,7 @@
 import torch
 import numpy as np
 
-EPOCHS = 10000
+EPOCHS = 1000
 BATCH_SIZE = 6 #16
 LEARNING_RATE = 2 * 1e-4
 NUM_BLOCKS = 30 #36
