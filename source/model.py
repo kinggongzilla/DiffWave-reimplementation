@@ -81,7 +81,7 @@ class DiffWaveBlock(torch.nn.Module):
         self.fc_timestep = torch.nn.Linear(layer_width, residual_channles)
 
         #batchnorm
-        self.batch_norm = torch.nn.BatchNorm1d(2*residual_channles)
+        self.batch_norm = torch.nn.BatchNorm1d(residual_channles)
 
 
         # bi directional conv
