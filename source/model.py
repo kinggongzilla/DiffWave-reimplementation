@@ -86,12 +86,15 @@ class DiffWaveBlock(torch.nn.Module):
         # outgoing convolution laayer
         self.conv_out = Conv1d(residual_channles, 2*residual_channles, 1)
 
+        self.batch_norm = torch.nn.BatchNorm1d(2*residual_channles)
+
     #forward pass, according to architecture in DiffWave paper
     def forward(self, x, t, conditioning_var=None):
         t = self.fc_timestep(t)
         t = t.unsqueeze(-1) # add another dimension at the end
         t = t.expand(1, 64, SAMPLE_RATE * SAMPLE_LENGTH_SECONDS) # expand the last dimension to match x; 22500 * 5 = 110250
         y = x + t #broadcast addition
+        y = self.batch_norm(y) 
         y = self.conv_dilated(y)
 
         #if conditionin variable is used, add it as bias to input y
