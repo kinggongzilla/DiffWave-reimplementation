@@ -80,6 +80,10 @@ class DiffWaveBlock(torch.nn.Module):
         # linear layer that processes diffusion timestep
         self.fc_timestep = torch.nn.Linear(layer_width, residual_channles)
 
+        #batchnorm
+        self.batch_norm = torch.nn.BatchNorm1d(2*residual_channles)
+
+
         # bi directional conv
         self.conv_dilated = Conv1d(residual_channles, 2*residual_channles, 3, dilation=2**(layer_index%dilation_mod), padding='same')
 
@@ -92,6 +96,7 @@ class DiffWaveBlock(torch.nn.Module):
         t = t.unsqueeze(-1) # add another dimension at the end
         t = t.expand(1, 64, SAMPLE_RATE * SAMPLE_LENGTH_SECONDS) # expand the last dimension to match x; 22500 * 5 = 110250
         y = x + t #broadcast addition
+        y = self.batch_norm(y)
         y = self.conv_dilated(y)
 
         #if conditionin variable is used, add it as bias to input y
