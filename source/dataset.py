@@ -20,10 +20,6 @@ class ChunkedData(Dataset):
                 count += 1
         self.length = count
 
-        print('after init ChunkedData memory allocated:')
-        print(torch.cuda.memory_allocated())
-
-
     def __len__(self):
         return self.length if self.max_samples is None or self.max_samples > self.length else self.max_samples
 

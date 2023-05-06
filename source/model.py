@@ -151,18 +151,12 @@ class DiffWave(torch.nn.Module):
         #time embedding
         t = self.timestep_in(t)
 
-        print('after timestep_in  in forward Diffwave:')
-        print(torch.cuda.memory_allocated())
-
         #blocks
         skip = None
         for block in self.blocks:
             x, skip_connection = block.forward(x, t, conditioning_var=conditioning_var)
             skip = skip_connection if skip is None else skip_connection + skip
         skip = skip / np.sqrt(len(self.blocks)) #divide by sqrt of number of blocks as in paper Github code
-        
-        print('after blocks for loop in forward Diffwave:')
-        print(torch.cuda.memory_allocated())
 
         #out
         x = self.out(x)
