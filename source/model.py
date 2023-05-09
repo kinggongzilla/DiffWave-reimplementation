@@ -113,7 +113,15 @@ class DiffWaveBlock(torch.nn.Module):
         print(torch.cuda.memory_allocated())
 
         y = torch.tanh(a) * torch.sigmoid(b)
+
+        print('after tanh * sigmoid DiffWaveBlock')
+        print(torch.cuda.memory_allocated())
+
         y = self.conv_out(y)
+
+        print('after conv out DiffWaveBlock')
+        print(torch.cuda.memory_allocated())
+
         y, skip = torch.chunk(y, 2, dim=1)
 
         print('end of forward DiffwaveBlock')
