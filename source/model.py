@@ -88,19 +88,36 @@ class DiffWaveBlock(torch.nn.Module):
 
     #forward pass, according to architecture in DiffWave paper
     def forward(self, x, t, conditioning_var=None):
+        print('beginning forward DiffWaveBlock')
+        print(torch.cuda.memory_allocated())
+
         t = self.fc_timestep(t)
         t = t.unsqueeze(-1) # add another dimension at the end
         t = t.expand(1, 64, SAMPLE_RATE * SAMPLE_LENGTH_SECONDS) # expand the last dimension to match x; 22500 * 5 = 110250
         y = x + t #broadcast addition
         y = self.conv_dilated(y)
 
+        print('after conv_dilated')
+        print(torch.cuda.memory_allocated())
+
         #if conditionin variable is used, add it as bias to input y
         if conditioning_var is not None:
             y = y + self.conv_conditioner(conditioning_var)
+
+        print('after conv_conditioner')
+        print(torch.cuda.memory_allocated())
+
         a, b = y.chunk(2, dim=1)
+
+        print('after chunk a, b')
+        print(torch.cuda.memory_allocated())
+
         y = torch.tanh(a) * torch.sigmoid(b)
         y = self.conv_out(y)
         y, skip = torch.chunk(y, 2, dim=1)
+
+        print('end of forward DiffwaveBlock')
+        print(torch.cuda.memory_allocated())
 
         return (y + x) / np.sqrt(2.0), skip
 
@@ -154,6 +171,9 @@ class DiffWave(torch.nn.Module):
         #blocks
         skip = None
         for block in self.blocks:
+            print('inside loop over blocks. Block nr: ', block.layer_index)
+            print(torch.cuda.memory_allocated())
+
             x, skip_connection = block.forward(x, t, conditioning_var=conditioning_var)
             skip = skip_connection if skip is None else skip_connection + skip
         skip = skip / np.sqrt(len(self.blocks)) #divide by sqrt of number of blocks as in paper Github code
