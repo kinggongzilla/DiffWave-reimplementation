@@ -5,7 +5,7 @@ import torch.nn.functional as F
 import pytorch_lightning as pl
 from tqdm import tqdm
 import wandb
-from config import VARIANCE_SCHEDULE, N_MELS, TIME_STEPS, WITH_CONDITIONING, LEARNING_RATE, SAMPLE_RATE, SAMPLE_LENGTH_SECONDS
+from config import VARIANCE_SCHEDULE, N_MELS, TIME_STEPS, WITH_CONDITIONING, LEARNING_RATE, SAMPLE_RATE, SAMPLE_LENGTH_SECONDS, RES_CHANNELS
 
 def Conv1d(*args, **kwargs):
   layer = torch.nn.Conv1d(*args, **kwargs)
@@ -91,7 +91,7 @@ class DiffWaveBlock(torch.nn.Module):
 
         t = self.fc_timestep(t)
         t = t.unsqueeze(-1) # add another dimension at the end
-        t = t.expand(1, 64, SAMPLE_RATE * SAMPLE_LENGTH_SECONDS) # expand the last dimension to match x; 22500 * 5 = 110250
+        t = t.expand(1, RES_CHANNELS, x.shape[2]) # expand the last dimension to match x;
         y = x + t #broadcast addition
         y = self.conv_dilated(y)
 
