@@ -11,6 +11,8 @@ from model import DiffWave, LitModel
 from dataset import ChunkedData, Collator
 from config import EPOCHS, BATCH_SIZE, LEARNING_RATE, NUM_BLOCKS, RES_CHANNELS, TIME_STEPS, VARIANCE_SCHEDULE, TIMESTEP_LAYER_WIDTH, SAMPLE_RATE, SAMPLE_LENGTH_SECONDS, MAX_SAMPLES, WITH_CONDITIONING, N_MELS, TRAIN_ON_SUBSAMPLES
 
+torch.manual_seed(42)
+
 #start with empty cache
 torch.cuda.empty_cache()
 
