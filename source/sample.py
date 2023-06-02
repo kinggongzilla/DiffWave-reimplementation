@@ -46,7 +46,7 @@ if WITH_CONDITIONING:
 noise = torch.randn(1, 1, SAMPLE_RATE*SAMPLE_LENGTH_SECONDS).to(device) # batch_size, n_channels, sample length e.g. 16KHz * 4000 milliseconds = 4 seconds of noise
 
 #get denoised sample
-y = model.sample(noise, conditioning_var=conditioning_var if model.with_conditioner else None)
+y = model.sample(noise, conditioning_var=conditioning_var if model.with_conditioner else None).to('cpu')
 
 #save audio for each generated sample in batch
 for i in range(y.shape[0]):
