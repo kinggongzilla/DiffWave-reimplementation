@@ -7,6 +7,8 @@ import wandb
 from model import DiffWave, LitModel
 from config import NUM_BLOCKS, RES_CHANNELS, TIME_STEPS, VARIANCE_SCHEDULE, TIMESTEP_LAYER_WIDTH, SAMPLE_RATE, SAMPLE_LENGTH_SECONDS, N_MELS, WITH_CONDITIONING
 
+torch.manual_seed(42)
+
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
 #default path to model used for sampling/inference
