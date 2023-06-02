@@ -149,6 +149,8 @@ class DiffWave(torch.nn.Module):
         #conditioning variable (spectrogram) input
         if conditioning_var is not None:
             conditioning_var = self.conditioner_block(conditioning_var)
+            #print magnitude of conditioning_var
+            print("Magnitude of conditioning_var: ", torch.mean(torch.abs(conditioning_var)))
 
         #waveform input
         x = self.waveform_in(x)
