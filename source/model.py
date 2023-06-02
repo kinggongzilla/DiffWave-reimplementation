@@ -151,6 +151,8 @@ class DiffWave(torch.nn.Module):
             conditioning_var = self.conditioner_block(conditioning_var)
             #print magnitude of conditioning_var
             print("Magnitude of conditioning_var: ", torch.mean(torch.abs(conditioning_var)))
+            #print magnitude of conditioning_var
+            print("Magnitude of x: ", torch.mean(torch.abs(x)))
 
         #waveform input
         x = self.waveform_in(x)
