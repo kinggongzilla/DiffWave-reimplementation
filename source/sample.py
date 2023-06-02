@@ -12,7 +12,7 @@ torch.manual_seed(42)
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
 #default path to model used for sampling/inference
-checkpoint = "./output/models/best_model.ckpt" #TODO: this path probably has to be adjusted to correct filename
+checkpoint = "./output/models/best_model.ckpt" 
 
 if WITH_CONDITIONING:
     #default to using first file in mel_spectrogram folder as conditioning variable
@@ -40,10 +40,10 @@ model.eval()
 conditioning_var=None
 if WITH_CONDITIONING:
     conditioning_var = torch.from_numpy(np.load(os.path.join("data/mel_spectrograms/", conditioner_file_name)))
-    conditioning_var = torch.unsqueeze(conditioning_var[0:1, :, :], 0)
+    conditioning_var = torch.unsqueeze(conditioning_var[0:1, :, :], 0).to(device)
 
 #generate starting noise
-noise = torch.randn(1, 1, SAMPLE_RATE*SAMPLE_LENGTH_SECONDS) # batch_size, n_channels, sample length e.g. 16KHz * 4000 milliseconds = 4 seconds of noise
+noise = torch.randn(1, 1, SAMPLE_RATE*SAMPLE_LENGTH_SECONDS).to(device) # batch_size, n_channels, sample length e.g. 16KHz * 4000 milliseconds = 4 seconds of noise
 
 #get denoised sample
 y = model.sample(noise, conditioning_var=conditioning_var if model.with_conditioner else None)
