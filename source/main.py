@@ -19,6 +19,7 @@ torch.cuda.empty_cache()
 #default data location
 data_path = os.path.join('data/chunked_audio')
 conditional_path = os.path.join('data/mel_spectrograms') if WITH_CONDITIONING else None
+model_checkpoint = None
 
 #example: python main.py path/to/data
 if len(sys.argv) > 1:
@@ -26,6 +27,9 @@ if len(sys.argv) > 1:
 
 if len(sys.argv) > 2:
     conditional_path = sys.argv[2]
+
+if len(sys.argv) > 3:
+    model_checkpoint = sys.argv[3]
 
 
 
@@ -75,7 +79,7 @@ lit_model = LitModel(model)
 #train model
 # trainer = pl.Trainer(callbacks=[checkpoint_callback], max_epochs=EPOCHS, accelerator='cpu', logger=wandb_logger)
 # trainer = pl.Trainer(callbacks=[checkpoint_callback], max_epochs=EPOCHS, gpus=-1, auto_select_gpus=True, strategy="ddp", logger=wandb_logger)
-trainer = pl.Trainer(callbacks=[checkpoint_callback], max_epochs=EPOCHS, accelerator="auto", strategy="ddp")
+trainer = pl.Trainer(callbacks=[checkpoint_callback], max_epochs=EPOCHS, accelerator="auto", strategy="ddp", resume_from_checkpoint=model_checkpoint)
 
 trainer.fit(model=lit_model, train_dataloaders=trainloader)
 
