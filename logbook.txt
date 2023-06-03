@@ -27,3 +27,17 @@ fixed variance schedule from np.linspace(10e-4,0.02) to np.linspace(1e-4,0.02)
 
 20.4.2023
 THE ISSUE WAS THAT WHEN A NEW PYTORCH LIGHTNING RUN IS STARTED THE NEW MODEL IS NOT SAVED AS OUTPUT/MODELS/BEST_MODEL.PT BUT AS OUTPUT/MODELS/BEST_MODEL-V1.PT, IF BEST_MODEL.PT ALREADY EXISTS!!!
+
+
+
+2.6.2023
+Model trained on 5 different sine waves with 5 different frequencies always produces the same sine wave when sampling.
+I looked at the magnitude of x (noise input) and the magnitude of the conditioning variable after the SpectrogramConditioner and conditioning_var is significantly smaller.
+Magnitude of conditioning var is always the same, regardless of what sine wave spectrogram i use as input.
+
+Magnitude of conditioning_var:  tensor(0.0339, device='cuda:0')
+Magnitude of x:  tensor(0.4453, device='cuda:0')
+
+
+3.6.2023
+Tried experiment from 2.6. with original diffwave model. When trained on 5 different sine wave frequencies, the model also outputs exactly the same sine wave, regardless of which spectrogram is used as input.
