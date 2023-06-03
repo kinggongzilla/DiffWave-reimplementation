@@ -41,3 +41,12 @@ Magnitude of x:  tensor(0.4453, device='cuda:0')
 
 3.6.2023
 Tried experiment from 2.6. with original diffwave model. When trained on 5 different sine wave frequencies, the model also outputs exactly the same sine wave, regardless of which spectrogram is used as input.
+
+
+
+3.6.2023
+Training both my reimplementation on 2843 subsamples from LJSpeech. 
+Reimplementation is trained on "full" subsample vectors of SAMPLE_RATE*AUDIO_LENGTH. Batch Size 2.
+Original DiffWave uses Collate to create larger Batch Size of 12, but with smaller random sub-sub-samples (Collator).
+
+Goal: Train both on 20k steps. Compare loss and audio quality.
