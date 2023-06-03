@@ -73,13 +73,13 @@ trainloader = torch.utils.data.DataLoader(
     )
 
 #initialize model
-model = DiffWave(RES_CHANNELS, NUM_BLOCKS, TIME_STEPS, VARIANCE_SCHEDULE, WITH_CONDITIONING, N_MELS, layer_width=TIMESTEP_LAYER_WIDTH)
+model = model = DiffWave.load_from_checkpoint(model_checkpoint) if model_checkpoint != None else  DiffWave(RES_CHANNELS, NUM_BLOCKS, TIME_STEPS, VARIANCE_SCHEDULE, WITH_CONDITIONING, N_MELS, layer_width=TIMESTEP_LAYER_WIDTH)
 lit_model = LitModel(model)
 
 #train model
 # trainer = pl.Trainer(callbacks=[checkpoint_callback], max_epochs=EPOCHS, accelerator='cpu', logger=wandb_logger)
 # trainer = pl.Trainer(callbacks=[checkpoint_callback], max_epochs=EPOCHS, gpus=-1, auto_select_gpus=True, strategy="ddp", logger=wandb_logger)
-trainer = pl.Trainer(callbacks=[checkpoint_callback], max_epochs=EPOCHS, accelerator="auto", strategy="ddp", resume_from_checkpoint=model_checkpoint)
+trainer = pl.Trainer(callbacks=[checkpoint_callback], max_epochs=EPOCHS, accelerator="auto", strategy="ddp")
 
 trainer.fit(model=lit_model, train_dataloaders=trainloader)
 
