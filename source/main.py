@@ -70,6 +70,7 @@ trainloader = torch.utils.data.DataLoader(
     batch_size=BATCH_SIZE,
     shuffle=True,
     collate_fn=Collator().collate if TRAIN_ON_SUBSAMPLES else None,
+    num_workers=12,
     )
 
 #initialize model
