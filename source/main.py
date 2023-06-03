@@ -80,7 +80,7 @@ lit_model = LitModel(model)
 #train model
 # trainer = pl.Trainer(callbacks=[checkpoint_callback], max_epochs=EPOCHS, accelerator='cpu', logger=wandb_logger)
 # trainer = pl.Trainer(callbacks=[checkpoint_callback], max_epochs=EPOCHS, gpus=-1, auto_select_gpus=True, strategy="ddp", logger=wandb_logger)
-trainer = pl.Trainer(callbacks=[checkpoint_callback], max_epochs=EPOCHS, accelerator="auto", strategy="ddp")
+trainer = pl.Trainer(callbacks=[checkpoint_callback], max_epochs=EPOCHS, accelerator="auto", find_unused_parameters=False)
 
 trainer.fit(model=lit_model, train_dataloaders=trainloader, ckpt_path=model_checkpoint)
 
