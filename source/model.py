@@ -6,6 +6,7 @@ import pytorch_lightning as pl
 from tqdm import tqdm
 import wandb
 from config import VARIANCE_SCHEDULE, N_MELS, TIME_STEPS, WITH_CONDITIONING, LEARNING_RATE, SAMPLE_RATE, SAMPLE_LENGTH_SECONDS, RES_CHANNELS
+import datetime
 
 def Conv1d(*args, **kwargs):
   layer = torch.nn.Conv1d(*args, **kwargs)
@@ -146,6 +147,9 @@ class DiffWave(torch.nn.Module):
 
     #forward pass according to DiffWave paper
     def forward(self, x, t, conditioning_var=None):
+
+        system_time_beginning = datetime.datetime.now()
+
         #conditioning variable (spectrogram) input
         if conditioning_var is not None:
             conditioning_var = self.conditioner_block(conditioning_var)
@@ -165,6 +169,11 @@ class DiffWave(torch.nn.Module):
 
         #out
         x = self.out(x)
+
+        system_time_end = datetime.datetime.now()
+        
+        print("Time for forward pass: ", system_time_end - system_time_beginning)
+
         return x
 
     #generate a sample from noise input
