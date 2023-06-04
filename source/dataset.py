@@ -83,6 +83,6 @@ class Collator:
             return torch.from_numpy(audio), SAMPLE_RATE, None
         spectrogram = torch.from_numpy(np.stack(conditioner_list))
         # insert dimension at 1 for audio
-        audio = audio.unsqueeze(1)
-        spectrogram = spectrogram.unsqueeze(1)
+        # audio = audio.unsqueeze(1)
+        # spectrogram = spectrogram.unsqueeze(1)
         return audio, SAMPLE_RATE, spectrogram
