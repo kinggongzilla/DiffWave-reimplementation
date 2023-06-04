@@ -147,7 +147,7 @@ class DiffWave(torch.nn.Module):
 
     #forward pass according to DiffWave paper
     def forward(self, x, t, conditioning_var=None):
-        diffwave_forward = TimeLogger("Conditioner block")
+        diffwave_forward = TimeLogger("Total forward pass DiffWave")
         diffwave_forward.start()
 
         #conditioning variable (spectrogram) input
