@@ -90,21 +90,37 @@ class DiffWaveBlock(torch.nn.Module):
     #forward pass, according to architecture in DiffWave paper
     def forward(self, x, t, conditioning_var=None):
 
+        timestep_timer = TimeLogger("fc_timestep")
+        timestep_timer.start()
         t = self.fc_timestep(t)
         t = t.unsqueeze(-1) # add another dimension at the end
         t = t.expand(1, RES_CHANNELS, x.shape[2]) # expand the last dimension to match x;
+        timestep_timer.stop()
+        
         y = x + t #broadcast addition
+
+        dilated_conv_timer = TimeLogger("conv_dilated")
+        dilated_conv_timer.start()
         y = self.conv_dilated(y)
+        dilated_conv_timer.stop()
 
         #if conditionin variable is used, add it as bias to input y
         if conditioning_var is not None:
+            conv_conditioner_timer = TimeLogger("conv_conditioner")
+            conv_conditioner_timer.start()
             y = y + self.conv_conditioner(conditioning_var)
+            conv_conditioner_timer.stop()
+
 
         a, b = y.chunk(2, dim=1)
 
         y = torch.tanh(a) * torch.sigmoid(b)
 
+
+        conv_conditioner_timer = TimeLogger("conv_conditioner")
+        conv_conditioner_timer.start()
         y = self.conv_out(y)
+        conv_conditioner_timer.stop()
 
         y, skip = torch.chunk(y, 2, dim=1)
 
@@ -147,49 +163,29 @@ class DiffWave(torch.nn.Module):
 
     #forward pass according to DiffWave paper
     def forward(self, x, t, conditioning_var=None):
-        diffwave_forward = TimeLogger("Total forward pass DiffWave")
-        diffwave_forward.start()
 
         #conditioning variable (spectrogram) input
         if conditioning_var is not None:
-            conditioner_block_timer = TimeLogger("Conditioner block")
-            conditioner_block_timer.start()
             conditioning_var = self.conditioner_block(conditioning_var)
-            conditioner_block_timer.stop()
 
         
 
-
         #waveform input
-        waveform_in_timer = TimeLogger("Waveform_in block")
-        waveform_in_timer.start()
         x = self.waveform_in(x)
-        waveform_in_timer.stop()
 
         #time embedding
-        waveform_in_timer = TimeLogger("Timestep_in block")
-        waveform_in_timer.start()
         t = self.timestep_in(t)
-        waveform_in_timer.stop()
 
         #blocks
-        residual_blocks_timer = TimeLogger("Residual blocks")
-        residual_blocks_timer.start()
-
         skip = None
         for block in self.blocks:
             x, skip_connection = block.forward(x, t, conditioning_var=conditioning_var)
             skip = skip_connection if skip is None else skip_connection + skip
         skip = skip / np.sqrt(len(self.blocks)) #divide by sqrt of number of blocks as in paper Github code
-        residual_blocks_timer.stop()
 
         #out
-        out_block_timer = TimeLogger("Out block")
-        out_block_timer.start()
         x = self.out(x)
-        out_block_timer.stop()
         
-        diffwave_forward.stop()
         return x
 
     #generate a sample from noise input
