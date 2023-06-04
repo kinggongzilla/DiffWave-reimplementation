@@ -147,33 +147,49 @@ class DiffWave(torch.nn.Module):
 
     #forward pass according to DiffWave paper
     def forward(self, x, t, conditioning_var=None):
-
-        system_time_beginning = datetime.datetime.now()
+        diffwave_forward = TimeLogger("Conditioner block")
+        diffwave_forward.start()
 
         #conditioning variable (spectrogram) input
         if conditioning_var is not None:
+            conditioner_block_timer = TimeLogger("Conditioner block")
+            conditioner_block_timer.start()
             conditioning_var = self.conditioner_block(conditioning_var)
+            conditioner_block_timer.stop()
+
+        
+
 
         #waveform input
+        waveform_in_timer = TimeLogger("Waveform_in block")
+        waveform_in_timer.start()
         x = self.waveform_in(x)
+        waveform_in_timer.stop()
 
         #time embedding
+        waveform_in_timer = TimeLogger("Timestep_in block")
+        waveform_in_timer.start()
         t = self.timestep_in(t)
+        waveform_in_timer.stop()
 
         #blocks
+        residual_blocks_timer = TimeLogger("Residual blocks")
+        residual_blocks_timer.start()
+
         skip = None
         for block in self.blocks:
             x, skip_connection = block.forward(x, t, conditioning_var=conditioning_var)
             skip = skip_connection if skip is None else skip_connection + skip
         skip = skip / np.sqrt(len(self.blocks)) #divide by sqrt of number of blocks as in paper Github code
+        residual_blocks_timer.stop()
 
         #out
+        out_block_timer = TimeLogger("Out block")
+        out_block_timer.start()
         x = self.out(x)
-
-        system_time_end = datetime.datetime.now()
+        out_block_timer.stop()
         
-        print("Time for forward pass: ", system_time_end - system_time_beginning)
-
+        diffwave_forward.stop()
         return x
 
     #generate a sample from noise input
@@ -249,3 +265,23 @@ class LitModel(pl.LightningModule):
     def configure_optimizers(self):
         optimizer = torch.optim.Adam(self.model.parameters(), lr=LEARNING_RATE)
         return [optimizer], []
+    
+
+class TimeLogger():
+    def __init__(self, message):
+        self.message = message
+        self.start_time = None
+        self.end_time = None
+        self.duration = None
+
+    def start(self):
+        self.start_time = datetime.datetime.now()
+
+    def stop(self):
+        self.end_time = datetime.datetime.now()
+        self.duration = self.end_time - self.start_time
+        print("Time used by step ", self.message, ": ", self.duration)
+        return self.duration
+    
+
+    
