@@ -117,10 +117,10 @@ class DiffWaveBlock(torch.nn.Module):
         y = torch.tanh(a) * torch.sigmoid(b)
 
 
-        conv_conditioner_timer = TimeLogger("conv_conditioner")
-        conv_conditioner_timer.start()
+        conv_out_timer = TimeLogger("conv_out")
+        conv_out_timer.start()
         y = self.conv_out(y)
-        conv_conditioner_timer.stop()
+        conv_out_timer.stop()
 
         y, skip = torch.chunk(y, 2, dim=1)
 
