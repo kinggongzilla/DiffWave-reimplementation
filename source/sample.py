@@ -29,7 +29,7 @@ if len(sys.argv) > 2:
 
 #load trained model
 diffwave = DiffWave(RES_CHANNELS, NUM_BLOCKS, TIME_STEPS, VARIANCE_SCHEDULE, WITH_CONDITIONING, N_MELS,)
-trained_diffwave = LitModel.load_from_checkpoint(checkpoint, model=diffwave)
+trained_diffwave = LitModel.load_from_checkpoint(checkpoint, model=diffwave).to(device)
 
 
 # choose your trained nn.Module
