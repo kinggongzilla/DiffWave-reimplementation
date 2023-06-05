@@ -90,37 +90,23 @@ class DiffWaveBlock(torch.nn.Module):
     #forward pass, according to architecture in DiffWave paper
     def forward(self, x, t, conditioning_var=None):
 
-        timestep_timer = TimeLogger("fc_timestep")
-        timestep_timer.start()
         t = self.fc_timestep(t)
         t = t.unsqueeze(-1) # add another dimension at the end
         t = t.expand(1, RES_CHANNELS, x.shape[2]) # expand the last dimension to match x;
-        timestep_timer.stop()
         
         y = x + t #broadcast addition
 
-        dilated_conv_timer = TimeLogger("conv_dilated")
-        dilated_conv_timer.start()
         y = self.conv_dilated(y)
-        dilated_conv_timer.stop()
 
         #if conditionin variable is used, add it as bias to input y
         if conditioning_var is not None:
-            conv_conditioner_timer = TimeLogger("conv_conditioner")
-            conv_conditioner_timer.start()
             y = y + self.conv_conditioner(conditioning_var)
-            conv_conditioner_timer.stop()
-
 
         a, b = y.chunk(2, dim=1)
 
         y = torch.tanh(a) * torch.sigmoid(b)
 
-
-        conv_out_timer = TimeLogger("conv_out")
-        conv_out_timer.start()
         y = self.conv_out(y)
-        conv_out_timer.stop()
 
         y, skip = torch.chunk(y, 2, dim=1)
 
