@@ -7,6 +7,7 @@ import pytorch_lightning as pl
 from pytorch_lightning.callbacks import ModelCheckpoint
 import wandb
 from pytorch_lightning.loggers import WandbLogger
+from pytorch_lightning.plugins import DDPPlugin
 from model import DiffWave, LitModel
 from dataset import ChunkedData, Collator
 from config import EPOCHS, BATCH_SIZE, LEARNING_RATE, NUM_BLOCKS, RES_CHANNELS, TIME_STEPS, VARIANCE_SCHEDULE, TIMESTEP_LAYER_WIDTH, SAMPLE_RATE, SAMPLE_LENGTH_SECONDS, MAX_SAMPLES, WITH_CONDITIONING, N_MELS, TRAIN_ON_SUBSAMPLES
@@ -15,6 +16,10 @@ torch.manual_seed(42)
 
 #start with empty cache
 torch.cuda.empty_cache()
+
+#print device
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+print("Device: ", device)
 
 #default data location
 data_path = os.path.join('data/chunked_audio')
@@ -80,7 +85,7 @@ lit_model = LitModel(model)
 #train model
 # trainer = pl.Trainer(callbacks=[checkpoint_callback], max_epochs=EPOCHS, accelerator='cpu', logger=wandb_logger)
 # trainer = pl.Trainer(callbacks=[checkpoint_callback], max_epochs=EPOCHS, gpus=-1, auto_select_gpus=True, strategy="ddp", logger=wandb_logger)
-trainer = pl.Trainer(callbacks=[checkpoint_callback], max_epochs=EPOCHS, accelerator="auto", strategy="ddp", logger=wandb_logger)
+trainer = pl.Trainer(callbacks=[checkpoint_callback], max_epochs=EPOCHS, accelerator="gpu",  strategy="ddp", plugins=DDPPlugin(find_unused_parameters=False), precision=16, logger=wandb_logger)
 
 trainer.fit(model=lit_model, train_dataloaders=trainloader, ckpt_path=model_checkpoint)
 
