@@ -53,9 +53,9 @@ class DiffusionEmbedding(torch.nn.Module):
 class SpectrogramConditioner(torch.nn.Module):
     def __init__(self):
         super().__init__()
-        self.conv1 = torch.nn.ConvTranspose2d(1, 1, [3, 32], stride=[1, 16], padding=[1, 8])
+        self.conv1 = torch.nn.Conv2d(1, 1, [3, 3], stride=[1, 3], padding=[1, 14])
         self.acivation1 = torch.nn.LeakyReLU(0.4)
-        self.conv2 = torch.nn.ConvTranspose2d(1, 1,  [3, 32], stride=[1, 16], padding=[1, 8])
+        self.conv2 = torch.nn.Conv2d(1, 1,  [3, 3], stride=[1, 3], padding=[1, 14])
         self.acivation2 = torch.nn.LeakyReLU(0.4)
 
     #project spectrogram into latent space
@@ -64,7 +64,7 @@ class SpectrogramConditioner(torch.nn.Module):
         spectrogram = self.acivation1(spectrogram)
         spectrogram = self.conv2(spectrogram)
         spectrogram = self.acivation2(spectrogram)
-        return torch.squeeze(spectrogram, 1)[:,:,:SAMPLE_RATE*SAMPLE_LENGTH_SECONDS]
+        return torch.squeeze(spectrogram, 1)
 
 #DiffWave residual block
 class DiffWaveBlock(torch.nn.Module):
@@ -132,7 +132,7 @@ class DiffWave(torch.nn.Module):
 
         #input layer before DiffWave blocks
         self.waveform_in = torch.nn.Sequential(
-            Conv1d(1, residual_channels, 1),
+            Conv1d(128, residual_channels, 1),
             torch.nn.ReLU()
         )
 
@@ -201,10 +201,10 @@ class LitModel(pl.LightningModule):
         self.model = model
     def training_step(self, batch, batch_idx):
         #get waveform from (waveform, sample_rate) tuple;
-        waveform = batch[0] # batch size, channels, length 
+        latent = batch[0] # batch size, channels, length 
 
         #generate noise
-        noise = torch.randn(waveform.shape)
+        noise = torch.randn(latent.shape)
 
         #generate random integer between 1 and number of diffusion timesteps
         t = torch.randint(0, TIME_STEPS, (1,))
@@ -221,17 +221,17 @@ class LitModel(pl.LightningModule):
         noise = noise.to(device)
 
         #create noisy version of original waveform
-        waveform = torch.sqrt(alpha_cum[t])*waveform + torch.sqrt(1-alpha_cum[t])*noise
+        latent = torch.sqrt(alpha_cum[t])*latent + torch.sqrt(1-alpha_cum[t])*noise
 
         del alpha_cum, beta, alpha
 
         conditioning_var = None
         if WITH_CONDITIONING:
             # get conditioning_var (spectrogram) from (waveform, sample_rate, spectrogram) tuple;
-            conditioning_var = batch[2] # batch size, channels, length
+            conditioning_var = batch[1] # spectrogram shape: batch size, channels, length
 
         # predict noise at diffusion timestep t
-        y_pred = self.model.forward(waveform, t, conditioning_var)
+        y_pred = self.model.forward(latent, t, conditioning_var)
 
         del t
 

@@ -27,3 +27,7 @@ official_diffwave_speech_10ksteps_6samples_batchsize6.wav
 ljspeech/*
 ljspeech_16k/*
 ljspeech_44k/*
+test_notebook.ipynb
+nohup.out
+.vscode/launch.json
+.vscode/settings.json

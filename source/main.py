@@ -9,7 +9,7 @@ import wandb
 from pytorch_lightning.loggers import WandbLogger
 from pytorch_lightning.plugins import DDPPlugin
 from model import DiffWave, LitModel
-from dataset import ChunkedData, Collator
+from dataset import ChunkedData, Collator, LatentsData
 from config import EPOCHS, BATCH_SIZE, LEARNING_RATE, NUM_BLOCKS, RES_CHANNELS, TIME_STEPS, VARIANCE_SCHEDULE, TIMESTEP_LAYER_WIDTH, SAMPLE_RATE, SAMPLE_LENGTH_SECONDS, MAX_SAMPLES, WITH_CONDITIONING, N_MELS, TRAIN_ON_SUBSAMPLES
 
 torch.manual_seed(42)
@@ -22,8 +22,8 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 print("Device: ", device)
 
 #default data location
-data_path = os.path.join('data/chunked_audio')
-conditional_path = os.path.join('data/mel_spectrograms') if WITH_CONDITIONING else None
+data_path = os.path.join('../data/encoded_audio/')
+conditional_path = os.path.join('../data/mel_spectrograms') if WITH_CONDITIONING else None
 model_checkpoint = None
 
 #example: python main.py path/to/data
@@ -67,7 +67,7 @@ checkpoint_callback = ModelCheckpoint(
 )
 
 #initialize dataset
-chunked_data = ChunkedData(audio_dir=data_path, conditional_dir=conditional_path, max_samples=MAX_SAMPLES)
+chunked_data = LatentsData(latents_dir=data_path, conditional_dir=conditional_path)
 
 #initialize dataloader
 trainloader = torch.utils.data.DataLoader(
@@ -75,7 +75,7 @@ trainloader = torch.utils.data.DataLoader(
     batch_size=BATCH_SIZE,
     shuffle=True,
     collate_fn=Collator().collate if TRAIN_ON_SUBSAMPLES else None,
-    num_workers=12,
+    num_workers=12, 
     )
 
 #initialize model
@@ -86,6 +86,3 @@ lit_model = LitModel(model)
 trainer = pl.Trainer(callbacks=[checkpoint_callback], max_epochs=EPOCHS, accelerator="auto", devices="auto", precision=16, logger=wandb_logger)
 
 trainer.fit(model=lit_model, train_dataloaders=trainloader, ckpt_path=model_checkpoint)
-
-#generate a sample directly after training
-import sample as sample
