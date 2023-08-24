@@ -9,8 +9,9 @@ import wandb
 from pytorch_lightning.loggers import WandbLogger
 from pytorch_lightning.plugins import DDPPlugin
 from model import DiffWave, LitModel
-from dataset import ChunkedData, Collator, LatentsData
+from dataset import LatentsData
 from config import EPOCHS, BATCH_SIZE, LEARNING_RATE, NUM_BLOCKS, RES_CHANNELS, TIME_STEPS, VARIANCE_SCHEDULE, TIMESTEP_LAYER_WIDTH, SAMPLE_RATE, SAMPLE_LENGTH_SECONDS, MAX_SAMPLES, WITH_CONDITIONING, N_MELS, TRAIN_ON_SUBSAMPLES
+from simple_cnn import SimpleCNN
 
 torch.manual_seed(42)
 
@@ -42,6 +43,7 @@ if len(sys.argv) > 3:
 wandb_logger = WandbLogger(
     project="DiffWave", 
     entity="daavidhauser",
+    name="EPOCHS_" + str(EPOCHS) + "_BATCH_SIZE_" + str(BATCH_SIZE) + "_LEARNING_RATE_" + str(LEARNING_RATE) + "_TIME_STEPS_" + str(TIME_STEPS) + "_VARIANCE_SCHEDULE_[" + str(VARIANCE_SCHEDULE[0])  + ", " + str(VARIANCE_SCHEDULE[-1]) + "]",
     config = {
     "learning_rate": LEARNING_RATE,
     "epochs": EPOCHS,
@@ -80,6 +82,7 @@ trainloader = torch.utils.data.DataLoader(
 
 #initialize model
 model = DiffWave(RES_CHANNELS, NUM_BLOCKS, TIME_STEPS, VARIANCE_SCHEDULE, WITH_CONDITIONING, N_MELS, layer_width=TIMESTEP_LAYER_WIDTH)
+# model = SimpleCNN()
 lit_model = LitModel(model)
 
 #train model
