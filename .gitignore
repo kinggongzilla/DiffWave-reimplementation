@@ -11,6 +11,7 @@ __pycache__/
 /.DS_Store
 /raw_data
 /output/models/*.pt
+/output/models/*.ckpt
 /output/samples/*.wav
 model.pt
 sample.wav

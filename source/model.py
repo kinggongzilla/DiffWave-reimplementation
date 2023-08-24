@@ -49,13 +49,12 @@ class DiffusionEmbedding(torch.nn.Module):
         table = torch.cat([torch.sin(table), torch.cos(table)], dim=1)
         return table
 
-#conditioner for spectrogram
 class SpectrogramConditioner(torch.nn.Module):
     def __init__(self):
         super().__init__()
-        self.conv1 = torch.nn.Conv2d(1, 1, [3, 3], stride=[1, 3], padding=[1, 14])
+        self.conv1 = torch.nn.ConvTranspose2d(1, 1, [4, 15], stride=[1, 4], padding=[1, 0])
         self.acivation1 = torch.nn.LeakyReLU(0.4)
-        self.conv2 = torch.nn.Conv2d(1, 1,  [3, 3], stride=[1, 3], padding=[1, 14])
+        self.conv2 = torch.nn.ConvTranspose2d(1, 1,  [4, 10], stride=[1, 4], padding=[1, 1])
         self.acivation2 = torch.nn.LeakyReLU(0.4)
 
     #project spectrogram into latent space
@@ -64,7 +63,7 @@ class SpectrogramConditioner(torch.nn.Module):
         spectrogram = self.acivation1(spectrogram)
         spectrogram = self.conv2(spectrogram)
         spectrogram = self.acivation2(spectrogram)
-        return torch.squeeze(spectrogram, 1)
+        return torch.squeeze(spectrogram, 1)[:, :80, :]
 
 #DiffWave residual block
 class DiffWaveBlock(torch.nn.Module):
@@ -132,7 +131,7 @@ class DiffWave(torch.nn.Module):
 
         #input layer before DiffWave blocks
         self.waveform_in = torch.nn.Sequential(
-            Conv1d(128, residual_channels, 1),
+            Conv1d(1, residual_channels, 1),
             torch.nn.ReLU()
         )
 
@@ -191,7 +190,6 @@ class DiffWave(torch.nn.Module):
                     noise = torch.randn_like(x_t)
                     sigma = ((1.0 - alpha_cum[n-1]) / (1.0 - alpha_cum[n]) * beta[n])**0.5
                     x_t += sigma * noise
-                x_t = torch.clamp(x_t, -1.0, 1.0)
         return x_t 
 
 
@@ -201,7 +199,11 @@ class LitModel(pl.LightningModule):
         self.model = model
     def training_step(self, batch, batch_idx):
         #get waveform from (waveform, sample_rate) tuple;
-        latent = batch[0] # batch size, channels, length 
+
+        if WITH_CONDITIONING:
+            latent = batch[0] # batch size, channels, length 
+        else:
+            latent = batch
 
         #generate noise
         noise = torch.randn(latent.shape)
