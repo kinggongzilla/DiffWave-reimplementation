@@ -5,18 +5,18 @@ import torch
 import torchaudio
 import wandb
 from model import DiffWave, LitModel
-from config import NUM_BLOCKS, RES_CHANNELS, TIME_STEPS, VARIANCE_SCHEDULE, TIMESTEP_LAYER_WIDTH, SAMPLE_RATE, SAMPLE_LENGTH_SECONDS, N_MELS, WITH_CONDITIONING
+from config import NUM_BLOCKS, RES_CHANNELS, TIME_STEPS, VARIANCE_SCHEDULE, TIMESTEP_LAYER_WIDTH, SAMPLE_RATE, N_MELS, WITH_CONDITIONING
 
 torch.manual_seed(42)
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
 #default path to model used for sampling/inference
-checkpoint = "./output/models/best_model-v21.ckpt" 
+checkpoint = "./output/models/NOISE_SCHEDULE_1e-5-0.0085_RES_CH_128_N_BLOCKS_30_DIF_STEPS_1000_B_SIZE_32_LR_0.0002_EPOCHS_5_CONDITIONING_True.ckpt" 
 
 if WITH_CONDITIONING:
     #default to using first file in mel_spectrogram folder as conditioning variable
-    conditioner_file_name = os.listdir("../data/mel_spectrograms/")[0] 
+    conditioner_file_name = os.listdir("../data/mel_spectrograms/")[738] 
 
 #get path to model, if given as argument
 if len(sys.argv) > 1:

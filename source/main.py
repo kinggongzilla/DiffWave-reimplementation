@@ -10,13 +10,16 @@ from pytorch_lightning.loggers import WandbLogger
 from pytorch_lightning.plugins import DDPPlugin
 from model import DiffWave, LitModel
 from dataset import LatentsData
-from config import EPOCHS, BATCH_SIZE, LEARNING_RATE, NUM_BLOCKS, RES_CHANNELS, TIME_STEPS, VARIANCE_SCHEDULE, TIMESTEP_LAYER_WIDTH, SAMPLE_RATE, SAMPLE_LENGTH_SECONDS, MAX_SAMPLES, WITH_CONDITIONING, N_MELS, TRAIN_ON_SUBSAMPLES
+from config import EPOCHS, BATCH_SIZE, LEARNING_RATE, NUM_BLOCKS, RES_CHANNELS, TIME_STEPS, VARIANCE_SCHEDULE, TIMESTEP_LAYER_WIDTH, SAMPLE_RATE, MAX_SAMPLES, WITH_CONDITIONING, N_MELS, TRAIN_ON_SUBSAMPLES
 from simple_cnn import SimpleCNN
 
 torch.manual_seed(42)
 
 #start with empty cache
 torch.cuda.empty_cache()
+
+#set precision
+torch.set_float32_matmul_precision('medium')
 
 #print device
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -43,7 +46,7 @@ if len(sys.argv) > 3:
 wandb_logger = WandbLogger(
     project="DiffWave", 
     entity="daavidhauser",
-    name="EPOCHS_" + str(EPOCHS) + "_BATCH_SIZE_" + str(BATCH_SIZE) + "_LEARNING_RATE_" + str(LEARNING_RATE) + "_TIME_STEPS_" + str(TIME_STEPS) + "_VARIANCE_SCHEDULE_[" + str(VARIANCE_SCHEDULE[0])  + ", " + str(VARIANCE_SCHEDULE[-1]) + "]",
+    name="BATCH_SIZE_" + str(BATCH_SIZE) + "_LEARNING_RATE_" + str(LEARNING_RATE) + "_TIME_STEPS_" + str(TIME_STEPS) + "_RES_CHANNELS_" + str(RES_CHANNELS) + "_VARIANCE_SCHEDULE_[" + str(VARIANCE_SCHEDULE[0])  + ", " + str(VARIANCE_SCHEDULE[-1]) + "]" + "_EPOCHS_" + str(EPOCHS),
     config = {
     "learning_rate": LEARNING_RATE,
     "epochs": EPOCHS,
@@ -54,7 +57,6 @@ wandb_logger = WandbLogger(
     "variance_schedule": VARIANCE_SCHEDULE,
     "timestep_layer_width": TIMESTEP_LAYER_WIDTH,
     "sample_rate": SAMPLE_RATE,
-    "sample_length_seconds": SAMPLE_LENGTH_SECONDS,
     "max_samples": MAX_SAMPLES,
     "with_conditional": WITH_CONDITIONING
     }
@@ -64,7 +66,7 @@ checkpoint_callback = ModelCheckpoint(
     monitor='train_loss',
     mode='min',
     dirpath='output/models/',
-    filename='best_model',
+    filename=f'RES_CH_{RES_CHANNELS}_N_BLOCKS_{NUM_BLOCKS}_DIF_STEPS_{TIME_STEPS}_B_SIZE_{BATCH_SIZE}_LR_{LEARNING_RATE}_EPOCHS_{EPOCHS}_CONDITIONING_{WITH_CONDITIONING}',
     save_top_k=1,
 )
 
@@ -76,8 +78,7 @@ trainloader = torch.utils.data.DataLoader(
     chunked_data,
     batch_size=BATCH_SIZE,
     shuffle=True,
-    collate_fn=Collator().collate if TRAIN_ON_SUBSAMPLES else None,
-    num_workers=12, 
+    num_workers=24, 
     )
 
 #initialize model

@@ -5,7 +5,7 @@ import torch
 import torch.nn.functional as F
 from torch.utils.data import Dataset
 import torchaudio
-from config import SAMPLE_RATE, SAMPLE_LENGTH_SECONDS, WITH_CONDITIONING, HOP_LENGTH, CROP_MEL_FRAMES
+from config import SAMPLE_RATE, WITH_CONDITIONING, HOP_LENGTH, CROP_MEL_FRAMES
 
 class LatentsData(Dataset):
     def __init__(self, latents_dir, conditional_dir=None) -> None:
