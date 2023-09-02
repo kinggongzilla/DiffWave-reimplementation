@@ -86,20 +86,24 @@ class DiffWaveBlock(torch.nn.Module):
         # outgoing convolution laayer
         self.conv_out = Conv1d(residual_channles, 2*residual_channles, 1)
 
+        #batchnorm y
+        self.batch_norm_y = torch.nn.BatchNorm1d(residual_channles)
+
     #forward pass, according to architecture in DiffWave paper
     def forward(self, x, t, conditioning_var=None):
 
         t = self.fc_timestep(t)
         t = t.unsqueeze(-1) # add another dimension at the end
         t = t.expand(1, RES_CHANNELS, x.shape[2]) # expand the last dimension to match x;
-        
+
         y = x + t #broadcast addition
 
         y = self.conv_dilated(y)
 
         #if conditionin variable is used, add it as bias to input y
         if conditioning_var is not None:
-            y = y + self.conv_conditioner(conditioning_var)
+            c = self.conv_conditioner(conditioning_var)
+            y = y + c
 
         a, b = y.chunk(2, dim=1)
 
@@ -109,7 +113,11 @@ class DiffWaveBlock(torch.nn.Module):
 
         y, skip = torch.chunk(y, 2, dim=1)
 
-        return (y + x) / np.sqrt(2.0), skip
+        y = (y + x) / np.sqrt(2.0)
+
+        y = self.batch_norm_y(y)
+
+        return y, skip
 
 
 class DiffWave(torch.nn.Module):
@@ -190,6 +198,10 @@ class DiffWave(torch.nn.Module):
                     noise = torch.randn_like(x_t)
                     sigma = ((1.0 - alpha_cum[n-1]) / (1.0 - alpha_cum[n]) * beta[n])**0.5
                     x_t += sigma * noise
+
+                    #print c1, c2 and sigma every 100 timesteps
+                    if n % 100 == 0:
+                        print("c1: ", c1, "c2: ", c2, "sigma: ", sigma)
         return x_t 
 
 
