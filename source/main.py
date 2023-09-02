@@ -54,7 +54,7 @@ wandb_logger = WandbLogger(
     "num_blocks": NUM_BLOCKS,
     "res_channels": RES_CHANNELS,
     "time_steps": TIME_STEPS,
-    "variance_schedule": VARIANCE_SCHEDULE,
+    "variance_schedule": str(VARIANCE_SCHEDULE),
     "timestep_layer_width": TIMESTEP_LAYER_WIDTH,
     "sample_rate": SAMPLE_RATE,
     "max_samples": MAX_SAMPLES,
