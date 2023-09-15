@@ -82,19 +82,22 @@ def chop_wav(song_id: str, audio_path: str, out_dir: str, length: int):
 if __name__ == '__main__':
     in_path=os.path.join('raw_samples')
     chopped_audio_out_path=os.path.join('data/chunked_audio')
+    mel_specs_out_path=os.path.join('data/mel_spectrograms')
 
     if len(sys.argv) > 1:
         in_path = sys.argv[1]
     if len(sys.argv) > 2:
         chopped_audio_out_path = sys.argv[2]
+    if len(sys.argv) > 3:
+        mel_specs_out_path = sys.argv[3]
 
     #loop over files in audio_folder_path
     for i, file in enumerate(os.listdir(in_path)):
         #break if max samples reached
         if len(os.listdir(chopped_audio_out_path)) >= (MAX_SAMPLES):
             break
-        chop_wav(i, os.path.join(in_path, file), chopped_audio_out_path, i)
+        chop_wav(i, os.path.join(in_path, file), chopped_audio_out_path, 5 * SAMPLE_RATE)
 
     #generate mel spectrograms from chopped audio
     for i, file in enumerate(os.listdir(chopped_audio_out_path)):
-        transform_to_spectrogram(os.path.join(chopped_audio_out_path, file), out_path='data/mel_spectrograms')
+        transform_to_spectrogram(os.path.join(chopped_audio_out_path, file), out_path=mel_specs_out_path)

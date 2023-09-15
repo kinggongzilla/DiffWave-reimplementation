@@ -8,10 +8,10 @@ from pytorch_lightning.callbacks import ModelCheckpoint
 import wandb
 from pytorch_lightning.loggers import WandbLogger
 from pytorch_lightning.plugins import DDPPlugin
-from model import DiffWave, LitModel
+from model import DenoisingModel, LitModel
+from unet import UNet
 from dataset import LatentsData
 from config import EPOCHS, BATCH_SIZE, LEARNING_RATE, NUM_BLOCKS, RES_CHANNELS, TIME_STEPS, VARIANCE_SCHEDULE, TIMESTEP_LAYER_WIDTH, SAMPLE_RATE, MAX_SAMPLES, WITH_CONDITIONING, N_MELS, TRAIN_ON_SUBSAMPLES
-from simple_cnn import SimpleCNN
 
 torch.manual_seed(42)
 
@@ -26,8 +26,10 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 print("Device: ", device)
 
 #default data location
-data_path = os.path.join('../data/encoded_audio/')
-conditional_path = os.path.join('../data/mel_spectrograms') if WITH_CONDITIONING else None
+# data_path = os.path.join('data/encoded_audio/')
+# conditional_path = os.path.join('data/mel_spectrograms') if WITH_CONDITIONING else None
+data_path = os.path.join('../data/encoded_audio_unet/')
+conditional_path = os.path.join('../data/mel_spectrograms_unet') if WITH_CONDITIONING else None
 model_checkpoint = None
 
 #example: python main.py path/to/data
@@ -82,8 +84,7 @@ trainloader = torch.utils.data.DataLoader(
     )
 
 #initialize model
-model = DiffWave(RES_CHANNELS, NUM_BLOCKS, TIME_STEPS, VARIANCE_SCHEDULE, WITH_CONDITIONING, N_MELS, layer_width=TIMESTEP_LAYER_WIDTH)
-# model = SimpleCNN()
+model = DenoisingModel()
 lit_model = LitModel(model)
 
 #train model
