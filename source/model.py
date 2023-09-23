@@ -50,26 +50,6 @@ class DenoisingModel(nn.Module):
 
                 np.save("output/samples/every_sample_step/every_sample_step_" + str(n), x_t.squeeze(0).squeeze(1).cpu().numpy())
 
-            # beta = self.variance_schedule
-            # alpha = 1 - beta
-            # alpha_cum = np.cumprod(alpha)
-
-            # #code below actually performs the sampling
-            # for n in tqdm(range(len(alpha) - 1, -1, -1)):
-            #   c1 = 1 / alpha[n]**0.5 # c1 approaches 1 as timestep gets closer to 0
-            #   c2 = beta[n] / (1 - alpha_cum[n])**0.5
-            #   x_t = c1 * (x_t - c2 * self.forward(x_t, torch.tensor(n), conditioning_var).squeeze(1))
-            #   if n > 0:
-            #     noise = torch.randn_like(x_t)
-            #     sigma = ((1.0 - alpha_cum[n-1]) / (1.0 - alpha_cum[n]) * beta[n])**0.5
-            #     sigma = beta[n]**0.5 #this sigma is optimal if x_0 is from gaussian; see section 3.2 Denoising Diffusion Probabilistic Models
-            #     x_t += sigma * noise
-
-            #     #print c1, c2 and sigma every 100 timesteps
-            #     if n % 100 == 0:
-            #       print("c1: ", c1, "c2: ", c2, "sigma: ", sigma)
-        # x_t = torch.clamp(x_t, -1.0, 1.0)
-
         return x_t.squeeze(1)
 
 

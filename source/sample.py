@@ -6,7 +6,6 @@ import torchaudio
 import wandb
 from model import DenoisingModel, LitModel
 from config import WITH_CONDITIONING
-from utils import zeroOneNorm
 
 torch.manual_seed(42)
 

@@ -1,10 +1,6 @@
 
 import sys
 
-
-
-
-
 # updates config file with new number of timesteps for experimentation
 #Example: update_config_file("config.py", 100)
 def update_config_file(file_path = 'source/config.py'):

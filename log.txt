@@ -1,3 +1,33 @@
+ssh -L 6006:localhost:6006 david@kinggongzilla.duckdns.org
+
+tensorboard --logdir=runs
+
+
+rave train --config v2 --db_path ../preprocessed --name rave_run_4_8_2023 —ckpt runs/rave_run_22_7_2023_fe77618ebd/version_3/checkpoints/last.ckpt
+
+
+
+
+PREPROCESS:
+
+python3 scripts/main_cli.py preprocess --input_path ../data/chunked_audio_unet --output_path ../data/rave_preprocessed_unet
+
+ENCODE:
+
+ python3 scripts/main_cli.py encode --db_path ../data/rave_preprocessed_unet --encoded_output_path ../data/encoded_audio_unet —-run runs/rave_run_22_7_2023_fe77618ebd
+
+ENCODE WITH CUSTOM AUDIOFILES DATASET
+python3 scripts/main_cli.py encode --db_path ../data/chunked_audio_unet --encoded_output_path ../data/encoded_audio_unet --run runs/rave_run_22_7_2023_fe77618ebd
+
+DECODE:
+
+python3 scripts/main_cli.py  decode --latents_path  ../DiffWave-reimplementation/output/samples/sample8999 --decoded_output_path ../data/decoded_audio/ --run runs/rave_run_22_7_2023_fe77618ebd/
+
+
+
+
+
+
 RAVE CHANGES MADE:
 
 
@@ -169,10 +199,142 @@ idea/thought: when using batch size 64 there are only 141 update steps in one ep
 When training with high variance schedule 1e-4,0.05 the loss is low. Moreover the norm of the model output is actually stable (when changing variance schedule after training, the sampling is unstable)
 However output samples are silent
 
+Experiment: training with var schedule 1e-4, 0.05 leads to unstable sampling process.
+Using powerTrasform to make samples more gaussion does not work (i.e. make samples better)
 
-TODOS:
+7.sept
 
-Wie groß sind skip connection magnitudes
-wie groß ist model output/layer output
-Wie affected der Block Index den magnitude
+Maybe flattening and reshaping insampling kills the sampling process? Maybe I’m flattening and reshaping in a wrong way, but i dont think so
 
+
+
+9. sept
+scaling data to -1, 1 does not help :(
+
+when inputting noise to decoder —> sample is completely silent
+
+
+Experiment 9. sept 2023
+scaling data to -1, 1 and scaling conditional var with constant and using res channel 128 with batch size 64 and 1e-4, 0.05
+—> very low loss! after 5 epochs already 0.07. This is better than loss on speech on waveform! (Which is now comparable, because data scale was also -1, 1)
+—> samples mostly silent
+
+Experiment 9. sept 2023
+Slowly adding noise to encoded latent. Decoder can still decode fairly well with small noise added, produces choppy sample with medium noise added and if using only noise as input it produces silent sample
+
+
+I visualized a spectrogram. It looks very wide and not high. Is this normal/okay? —> notebook
+
+
+Info found in paper: sigma = beta[n]**0.5 #this sigma is optimal if x_0 is from gaussian; see section 3.2 Denoising Diffusion Probabilistic Models
+
+Experiment:
+Train model with inputs scaled to -1 1
+Noise schedule 0.02 from Denoising DPM paper
+Steps 1000 from denoising dpm paper
+~20k steps
+
+
+Learning: Loss is lower with more diffusion steps! But this is not actually an improvement because a smaller error is added more often during sampling!
+—> When comparing to loss in waveform space, one would have to compare with 50 steps! When training with 50 steps the loss is much higher! (is this correct?!?)
+—> Model is completely undertrained/unable to be trained enough
+
+Moreover in DiffWave and Denoising DPM paper they talk about 1m and 800k update steps respectively. I have never done that many steps
+
+
+Experiment Idea: Rewrite from 1d convs to 2d convs and dont flatten inputs. 
+Embeddings for spectrograms (conditioning variables) can be concatenated along the channel dimension to the sample and then the whole thing is used as input to unet
+
+
+Unet experiment: 
+Loss seems similar to loss after changes from denoising dpm paper (-1,1 scaling, 1e-4, 0.04 var sched). 
+Will do run with about 250k steps
+Have not tried sampling yet
+training seems much faster, eventhough the model is 30M params. Plus the GPU isnt using full capacity in terms of compute and vram?!
+
+
+
+Idea: Also clip noise to -1 to 1
+
+Experiment: Learning a single greyscale image of a panda
+Observation: x_t before clamping is MUCH higher than -1 and 1: Min -142; Max 308
+
+After 10K steps the model does learn to generate a noisy panda! var schedule: 0.0015 , 0.0195
+
+Longer training does not improve panda quality?! Tried with 30k and 100k training steps
+
+Experiment: try with kaiming normal initialization
+—> no improvement
+
+Experiment: try 100M Param Model
+—> no improvement
+
+Experiment: train on all encodings for 50k steps with 15 diff steps
+—> produces some audio but not better than previously with 10 diff steps
+
+
+———————
+
+I tried manually adding noise to panda to see how poorly the network is reproducing the panda.
+I would say the network still leaves ROUGHLY sample + 1.5*noise.
+This is too much noise!
+When manually adding noise to a latent encoding, networks stops producing any sound at sample + 1*noise (I BELIEVE, NEED TO RECHECK)
+
+
+Experiment: train 8M param unet on panda for 1Mio steps
+—> after 500k steps, loss seems to be a bit lower but generated image is very poor. Worse than at 10k and 30k steps
+
+
+Experiment: predixt x_t-1 directly without predicting noise —> weird noise output
+
+Experiment: only ONE diffusion step —> noise input target is not noisy latent —> predicts perfect panda
+
+Experiment: onyl ONE diffusion step on encoded audio —> RAVE can generate AUDIO!
+
+Experiment: train with ONE diff step on whole dataset —> loss does not go down
+
+Conclusion: Something is wrong with the sampling process when using more than 1 diff step. not with training!
+
+
+
+
+
+Experiment:
+Linear noise schedule from 1e-4 to 1
+Model predicts x_t-1
+—> Perfectly recreates panda if model makes direct prediction from noise to panda
+—> worse prediction if model makes one extra step (e.g. 3 DIFFUSION_STEPS in config)
+—> panda seems a bit worse with 10 diffusion steps
+—> 100 steps: model produces trash
+Note: model makes DIFFUSION_STEPS-2 number of predictions. 
+
+
+Experiment:
+I trackd the generated samples at every inference step:
+10 steps: clear progression from noisy to not noisy
+100 steps: weird patterns appear after a few steps
+50: steps —> similar to 100 steps
+
+
+
+Experiment:
+Train unet predicting x_t with 10 diff steps —> PRODUCES AUDIO!!! loos approx 0.03-0.04
+
+—> if using only 2 diff steps —> loss does not go down, stays at around 0.2
+
+
+Je weniger diffusion steps umso einfacher und besser lernt das model ein einzelnes sample.
+—> Stimmt das?!?!? Mit zb 5 diff steps gibt es komische streifen im Panda, die bei 20 nicht da waren
+
+Observation: The more diffusions steps are used, the lower the loss has to be for good sample quality
+
+
+
+—> Noise scheduling als Teil der Bachelor arbeit: zb CNN diffusion network auf MNIST zu trainieren und 10 selbst erfundene noise schedules ausprobieren —> checken was dann passiert.
+Diffusion implementations: https://github.com/topics/diffusion-model
+https://arxiv.org/abs/2006.11239 
+[2006.11239] Denoising Diffusion Probabilistic Models (arxiv.org)
+On the importance of noise scheduling: https://arxiv.org/abs/2301.10972 
+
+https://huggingface.co/blog/annotated-diffusion
+The Annotated Diffusion Model (huggingface.co) 
