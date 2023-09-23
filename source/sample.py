@@ -4,19 +4,20 @@ import numpy as np
 import torch
 import torchaudio
 import wandb
-from model import DiffWave, LitModel
-from config import NUM_BLOCKS, RES_CHANNELS, TIME_STEPS, VARIANCE_SCHEDULE, TIMESTEP_LAYER_WIDTH, SAMPLE_RATE, N_MELS, WITH_CONDITIONING
+from model import DenoisingModel, LitModel
+from config import WITH_CONDITIONING
+from utils import zeroOneNorm
 
 torch.manual_seed(42)
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
 #default path to model used for sampling/inference
-checkpoint = "./output/models/single_sample_model.ckpt" 
+checkpoint = "./output/models/UNET_DIF_STEPS_2_B_SIZE_128_LR_2e-05_EPOCHS_1000_CONDITIONING_True.ckpt" 
 
 if WITH_CONDITIONING:
     #default to using first file in mel_spectrogram folder as conditioning variable
-    conditioner_file_name = os.listdir("../data/mel_spectrograms/")[0] 
+    conditioner_file_name = os.listdir("../data/mel_spectrograms/")[8999]
 
 #get path to model, if given as argument
 if len(sys.argv) > 1:
@@ -28,7 +29,7 @@ if len(sys.argv) > 2:
 
 
 #load trained model
-diffwave = DiffWave(RES_CHANNELS, NUM_BLOCKS, TIME_STEPS, VARIANCE_SCHEDULE, WITH_CONDITIONING, N_MELS,)
+diffwave = DenoisingModel()
 trained_diffwave = LitModel.load_from_checkpoint(checkpoint, model=diffwave).to(device)
 
 
@@ -39,14 +40,15 @@ model.eval()
 #load conditioning variable (spectrogram)
 conditioning_var=None
 if WITH_CONDITIONING:
-    conditioning_var = torch.from_numpy(np.load(os.path.join("../data/mel_spectrograms/", conditioner_file_name)))
+    conditioning_var = torch.from_numpy(np.load(os.path.join("../data/mel_spectrograms_unet/", conditioner_file_name)))
     conditioning_var = torch.unsqueeze(conditioning_var[0:1, :, :], 0).to(device)
 
 #generate starting noise
-noise = torch.randn(1, 1, 128 * 109).to(device) # batch size x channel x flattened latent size
+noise = torch.randn(1, 1, 128, 109).to(device) # batch size x channel x flattened latent size
+# normed_noise = zeroOneNorm(noise)
 
 #get denoised sample
-y = model.sample(noise, conditioning_var=conditioning_var if model.with_conditioner else None).to(device)
+y = model.sample(noise, conditioning_var=conditioning_var if WITH_CONDITIONING else None).to(device)
 
 #save audio for each generated sample in batch
 for i in range(y.shape[0]):
@@ -55,15 +57,16 @@ for i in range(y.shape[0]):
     random_int = np.random.randint(0, 1000000)
     path = os.path.join("output/samples", f"sample{random_int}.wav") #use random int to make name unique if sample is called multiple times during training
 
-    #get max min values of a gaussian, for reverse normalization of generated latent sample
-    r = torch.randn(1, 1, 128 * 109).to(device)
-    #scale from (-1, 1) to gaussian
+    # scale from (-1, 1) to gaussian (for rave latents)
+    y = y/y.std()
 
-    z = (y + 1) / 2
-    y = z * (torch.max(r) - torch.min(r)) + torch.min(r) # apply the reverse normalization 
-    reshaped = y[i].squeeze(0).reshape((128,109))
+    # scale from (-1, 1) to (0, 255) for images
+    # z = (y + 1) / 2
+    # y = z * (255 - 0) + 0 # IMAGE: apply the reverse normalization 
     
-    np.save(path, reshaped.to('cpu'))
+    output = y[i].squeeze(0)
+    
+    np.save(path, output.to('cpu'))
 
     #save audio to wandb, if wandb is initialized
     if wandb.run is not None:

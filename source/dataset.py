@@ -5,7 +5,8 @@ import torch
 import torch.nn.functional as F
 from torch.utils.data import Dataset
 import torchaudio
-from config import SAMPLE_RATE, WITH_CONDITIONING, HOP_LENGTH, CROP_MEL_FRAMES
+from config import WITH_CONDITIONING
+from utils import zeroOneNorm
 
 class LatentsData(Dataset):
     def __init__(self, latents_dir, conditional_dir=None, flatten=True) -> None:
@@ -18,11 +19,11 @@ class LatentsData(Dataset):
         return len(os.listdir(self.latents_dir))
 
     def __getitem__(self, index):
-        latent = np.load(os.path.join(self.latents_dir, self.latents_files[index]), allow_pickle=True)
-        if not WITH_CONDITIONING:
-            return torch.from_numpy(latent).unsqueeze(0)
-        spectrogram = np.load(os.path.join(self.conditional_dir, self.spec_files[index]))[0:1,:,:] #get single channel spectrogram from spectrogram with two channels; slicing [0:1] to preserve dimensions
+        latent = torch.from_numpy(np.load(os.path.join(self.latents_dir, self.latents_files[index]), allow_pickle=True))
         # normalize and scale to range (-1 , 1)
-        z = (latent - np.min(latent)) / (np.max(latent) - np.min(latent)) # apply the normalization formula
-        x = 2 * z - 1 # apply the scaling formula
-        return torch.from_numpy(x).unsqueeze(0), torch.from_numpy(spectrogram)
+        x = zeroOneNorm(latent)
+        if not WITH_CONDITIONING:
+            return x.unsqueeze(0)
+        spectrogram = torch.from_numpy(np.load(os.path.join(self.conditional_dir, self.spec_files[index])))[0:1,:,:] #get single channel spectrogram from spectrogram with two channels; slicing [0:1] to preserve dimensions
+
+        return x.unsqueeze(0), spectrogram

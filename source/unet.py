@@ -12,6 +12,7 @@ class conv_block(nn.Module):
     self.conv2 = nn.Conv2d(out_c, out_c, kernel_size=3, padding=1)
     self.bn2 = nn.BatchNorm2d(out_c)
     self.relu = nn.ReLU()
+
   def forward(self, inputs):
     x = self.conv1(inputs)
     x = self.bn1(x)
@@ -73,32 +74,12 @@ class UNet(nn.Module):
     d2 = self.d2(d1, s3)
     d3 = self.d3(d2, s2)
     d4 = self.d4(d3, s1)
-    """ Classifier """
+    """ Output """
     outputs = self.outputs(d4)
     return outputs
 
-      #generate a sample from noise input
-  def sample(self, x_t, conditioning_var=None):
-    with torch.no_grad():
 
-      beta = self.variance_schedule
-      alpha = 1 - beta
-      alpha_cum = np.cumprod(alpha)
 
-      #code below actually performs the sampling
-      for n in tqdm(range(len(alpha) - 1, -1, -1)):
-        c1 = 1 / alpha[n]**0.5 # c1 approaches 1 as timestep gets closer to 0
-        c2 = beta[n] / (1 - alpha_cum[n])**0.5
-        x_t = c1 * (x_t - c2 * self.forward(x_t, torch.tensor(n), conditioning_var).squeeze(1))
-        if n > 0:
-          noise = torch.randn_like(x_t)
-          # sigma = ((1.0 - alpha_cum[n-1]) / (1.0 - alpha_cum[n]) * beta[n])**0.5
-          sigma = beta[n]**0.5 #this sigma is optimal if x_0 is from gaussian; see section 3.2 Denoising Diffusion Probabilistic Models
-          x_t += sigma * noise
-
-          #print c1, c2 and sigma every 100 timesteps
-          if n % 100 == 0:
-            print("c1: ", c1, "c2: ", c2, "sigma: ", sigma)
 
 
 #UNet Code from: https://medium.com/analytics-vidhya/unet-implementation-in-pytorch-idiot-developer-da40d955f201
