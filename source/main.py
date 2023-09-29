@@ -22,8 +22,8 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 print("Device: ", device)
 
 #default data location
-data_path = os.path.join('data/chunked_audio')
-conditional_path = os.path.join('data/mel_spectrograms') if WITH_CONDITIONING else None
+data_path = os.path.join('../data/chunked_audio')
+conditional_path = os.path.join('../data/mel_spectrograms') if WITH_CONDITIONING else None
 model_checkpoint = None
 
 #example: python main.py path/to/data

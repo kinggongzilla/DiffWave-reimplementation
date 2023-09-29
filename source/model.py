@@ -174,69 +174,56 @@ class DiffWave(torch.nn.Module):
         
         return x
 
-    #generate a sample from noise input
+      #generate a sample from noise input
     def sample(self, x_t, conditioning_var=None):
         with torch.no_grad():
 
-            beta = self.variance_schedule
-            alpha = 1 - beta
-            alpha_cum = np.cumprod(alpha)
+        #sample t-1 sample directly, do not predict noise
+            for n in tqdm(range(len(VARIANCE_SCHEDULE) - 2, -1, -1)):
+                x_t = self.forward(x_t, torch.tensor(n+1), conditioning_var)
 
-            #code below actually performs the sampling
-            for n in tqdm(range(len(alpha) - 1, -1, -1)):
-                c1 = 1 / alpha[n]**0.5 # c1 approaches 1 as timestep gets closer to 0
-                c2 = beta[n] / (1 - alpha_cum[n])**0.5
-                x_t = c1 * (x_t - c2 * self.forward(x_t, torch.tensor(n), conditioning_var).squeeze(1))
-                if n > 0:
-                    noise = torch.randn_like(x_t)
-                    sigma = ((1.0 - alpha_cum[n-1]) / (1.0 - alpha_cum[n]) * beta[n])**0.5
-                    x_t += sigma * noise
-                x_t = torch.clamp(x_t, -1.0, 1.0)
-        return x_t 
+        return x_t.squeeze(1)
 
 
 class LitModel(pl.LightningModule):
     def __init__(self, model):
         super().__init__()
         self.model = model
+
     def training_step(self, batch, batch_idx):
-        #get waveform from (waveform, sample_rate) tuple;
-        waveform = batch[0] # batch size, channels, length 
+        device = self.device
+
+        if WITH_CONDITIONING:
+            latent = batch[0] # batch size, channels, length 
+        else:
+            latent = batch
 
         #generate noise
-        noise = torch.randn(waveform.shape)
+        noise = torch.randn(latent.shape)
 
         #generate random integer between 1 and number of diffusion timesteps
-        t = torch.randint(0, TIME_STEPS, (1,))
+        t = torch.randint(1, TIME_STEPS, (1,))
 
         #define scaling factors for original waveform and noise
 
-        beta = VARIANCE_SCHEDULE
-        alpha = 1 - beta
-        alpha_cum = np.cumprod(alpha)
+        beta = VARIANCE_SCHEDULE.to(device)
 
-        #put all tensors on correct device
-        device = self.device
-        alpha_cum = alpha_cum.to(device)
         noise = noise.to(device)
 
-        #create noisy version of original waveform
-        waveform = torch.sqrt(alpha_cum[t])*waveform + torch.sqrt(1-alpha_cum[t])*noise
-
-        del alpha_cum, beta, alpha
+        noisy_latent = (1- beta[t])*latent + (beta[t])*noise
+        less_noisy_latent = (1- beta[t-1])*latent + (beta[t-1])*noise
 
         conditioning_var = None
         if WITH_CONDITIONING:
-            # get conditioning_var (spectrogram) from (waveform, sample_rate, spectrogram) tuple;
-            conditioning_var = batch[2] # batch size, channels, length
+            conditioning_var = batch[1] # spectrogram shape: batch size, channels, length
 
         # predict noise at diffusion timestep t
-        y_pred = self.model.forward(waveform, t, conditioning_var)
+        y_pred = self.model.forward(noisy_latent, t, conditioning_var)
 
         del t
 
         #calculate loss and return loss
-        batch_loss = F.l1_loss(y_pred, noise)
+        batch_loss = F.l1_loss(y_pred, less_noisy_latent)
 
         del noise
 
