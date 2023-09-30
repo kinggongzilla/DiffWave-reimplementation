@@ -85,6 +85,7 @@ class input_timestep(torch.nn.Module):
         self.projection2 = torch.nn.Linear(128, 128)
         self.silu2 = torch.nn.SiLU()
 
+
     #project diffusion timestep into latent space
     def forward(self, t):
         if t.dtype in [torch.int32, torch.int64]:
@@ -95,6 +96,7 @@ class input_timestep(torch.nn.Module):
         x = self.silu1(x)
         x = self.projection2(x)
         x = self.silu2(x)
+
         return x
     def _lerp_embedding(self, t):
         low_idx = torch.floor(t).long()

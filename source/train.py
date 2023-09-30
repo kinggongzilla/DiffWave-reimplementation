@@ -31,10 +31,12 @@ def train(model_output_path='output/models/'):
 
     #default data location
     # data_path = os.path.join('data/panda')
+    # data_path = os.path.join('data/encoded_audio')
     # conditional_path = os.path.join('data/mel_spectrograms') if WITH_CONDITIONING else None
+
     data_path = os.path.join('../data/encoded_audio_unet/')
     conditional_path = os.path.join('../data/mel_spectrograms_unet') if WITH_CONDITIONING else None
-    model_checkpoint = 'output/models/UNET_DIF_STEPS_2_B_SIZE_128_LR_2e-05_EPOCHS_1000_CONDITIONING_True.ckpt'
+    model_checkpoint = None
 
     #example: python main.py path/to/data
     if len(sys.argv) > 1:
