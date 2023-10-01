@@ -45,7 +45,7 @@ class DenoisingModel(nn.Module):
 
         gamma = lambda t: simple_linear_schedule(t.item())
         # gamma = lambda t: exponential_schedule(t.item(), tau=0.2)
-        # gamma = lambda t: cosine_schedule(t.item(), tau=0.2)
+        # gamma = lambda t: cosine_schedule(t.item(),)
 
         with torch.no_grad():
 
@@ -111,7 +111,7 @@ class LitModel(pl.LightningModule):
         #linear variance schedule gamma function; can be changed to cos or sigmoid. Look at Importance of Noise Scheduling paper
         gamma = lambda t: simple_linear_schedule(t.item())
         # gamma = lambda t: exponential_schedule(t.item(), tau=0.2)
-        # gamma = lambda t: cosine_schedule(t.item(), tau=0.2)
+        # gamma = lambda t: cosine_schedule(t.item(),)
 
         #generate random integer between 1 and number of diffusion timesteps
         t = torch.rand(1).to(device)
@@ -135,11 +135,16 @@ class LitModel(pl.LightningModule):
         #calculate loss and return loss
         batch_loss = F.l1_loss(y_pred, noise)
 
-        self.log('train_loss', batch_loss, on_epoch=True)
+
 
         bins = np.arange(0, 1.1, 0.1)
         bin_number = np.digitize(t.item(), bins)
         self.log(f'diffusion_step_{bin_number}_loss', batch_loss, on_epoch=True)
+
+        self.log_dict({
+            'train_loss': batch_loss,
+            f'diffusion_step_{bin_number}_loss': batch_loss,
+        }, on_epoch=True)
 
         return batch_loss
     
