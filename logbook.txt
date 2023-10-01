@@ -1,52 +1,383 @@
-Practical work stuff I tried:
+ssh -L 6006:localhost:6006 david@kinggongzilla.duckdns.org
 
-1. Learn one single 5 second sine wave:
-Result: After 10k steps, inference was still noisy but one could clearly hear the sine wave
+tensorboard --logdir=runs
 
-2. Train on 7k samples for 20 Epochs
-Result: Only noise when sampling. Loss constant after 10 epochs
 
-3. Train on one single 5 second sample
-loss constant after first 1000 steps
-
-4. Train on sine wave for 15k steps
-works reasonably well. Loss stays roughly the same for last 3.5k steps.
-Audio is still noisy but one can clearly hear the sine wave.
-
-5. Train on whole 150k samples for one epoch
-Loss stopped going down after first 10k steps (out of 20k). Produces only noise with some rythmic sound artefacts
-
-6. Reduced sample rate to 8k. Now able to load model with 1.6M parameters and batch size 8, with 4 second samples into memory. 
-Paper uses ~24M params for unconditional model?? I will train on 900 samples (=1h of audio) for 500 epochs. In paper they trained for 1M steps!!
+rave train --config v2 --db_path ../preprocessed --name rave_run_4_8_2023 —ckpt runs/rave_run_22_7_2023_fe77618ebd/version_3/checkpoints/last.ckpt
 
 
 
 
-16.4.2021
-fixed variance schedule from np.linspace(10e-4,0.02) to np.linspace(1e-4,0.02)
+PREPROCESS:
 
-20.4.2023
-THE ISSUE WAS THAT WHEN A NEW PYTORCH LIGHTNING RUN IS STARTED THE NEW MODEL IS NOT SAVED AS OUTPUT/MODELS/BEST_MODEL.PT BUT AS OUTPUT/MODELS/BEST_MODEL-V1.PT, IF BEST_MODEL.PT ALREADY EXISTS!!!
+python3 scripts/main_cli.py preprocess --input_path ../data/chunked_audio_unet --output_path ../data/rave_preprocessed_unet
 
+ENCODE:
 
+ python3 scripts/main_cli.py encode --db_path ../data/rave_preprocessed_unet --encoded_output_path ../data/encoded_audio_unet —-run runs/rave_run_22_7_2023_fe77618ebd
 
-2.6.2023
-Model trained on 5 different sine waves with 5 different frequencies always produces the same sine wave when sampling.
-I looked at the magnitude of x (noise input) and the magnitude of the conditioning variable after the SpectrogramConditioner and conditioning_var is significantly smaller.
-Magnitude of conditioning var is always the same, regardless of what sine wave spectrogram i use as input.
+ENCODE WITH CUSTOM AUDIOFILES DATASET
+python3 scripts/main_cli.py encode --db_path ../data/chunked_audio_unet --encoded_output_path ../data/encoded_audio_unet --run runs/rave_run_22_7_2023_fe77618ebd
 
-Magnitude of conditioning_var:  tensor(0.0339, device='cuda:0')
-Magnitude of x:  tensor(0.4453, device='cuda:0')
+DECODE:
 
-
-3.6.2023
-Tried experiment from 2.6. with original diffwave model. When trained on 5 different sine wave frequencies, the model also outputs exactly the same sine wave, regardless of which spectrogram is used as input.
+python3 scripts/main_cli.py  decode --latents_path  ../DiffWave-reimplementation/output/samples/new1 --decoded_output_path ../data/decoded_audio/ --run runs/rave_run_22_7_2023_fe77618ebd/
 
 
 
-3.6.2023
-Training both my reimplementation on 2843 subsamples from LJSpeech. 
-Reimplementation is trained on "full" subsample vectors of SAMPLE_RATE*AUDIO_LENGTH. Batch Size 2.
-Original DiffWave uses Collate to create larger Batch Size of 12, but with smaller random sub-sub-samples (Collator).
 
-Goal: Train both on 20k steps. Compare loss and audio quality.
+
+
+RAVE CHANGES MADE:
+
+
+1. install local rave version (github clone) with “pip install -e .” —> to do that i first had to manually set version to “v2” in setup.py line 6
+
+2. Add “scripts/encode.py” and “scripts/decode.py” files
+
+3. add “”encode” and “decode” to main_cli.py AVAILABLE_SCRIPTS and in main() function (if elif statements)
+
+
+5. set transform_to_spectrogram params to config from diffwave
+
+6. add AudioFilesDataset to load audio from file system
+
+
+DIFFWAVE CHANGES MADE:
+
+1. changed waveform_in input channels to 128 (latent size of RAVE)
+
+2. changed spectrogram conditioner to reduce size with convolutions instead of transpose conv2d
+
+
+
+
+
+—————
+I created LatentDataset in RAVE/rave/dataset.py to load latents created by DiffWave and then feed to decoder script.
+———————————
+
+
+
+
+6. August 2023
+produced samples by sampling from diffwave into latent space and then putting through decoder are silent. 
+
+7. August
+I compared samples produced by the encoder and samples produced by diffwave. Both have mean around zero, however encoder samples have max and min around +/- 4 and diffwave samples have max and min exactly at +/- 1
+
+I tried simply multiplying the magnitude of generated latent representations by diffwave by 4 and then feeding to decoder. However this did not produce samples with larger magnitude.
+
+
+
+—> does diffwave clip to 1
+
+—> flatten latent representations
+
+—> Mini CNN modell anstatt DiffWave modell um zu sehen ob damit der Loss runter geht (ggf ohne conditioning für einfachheit)
+
+
+—> Bei RAVE ausprobieren, ob ich zwischen zwei Encoded audio samples interpolieren kann und aus dem Decoder noch immer etwas sinnvolles rauskommt. —> Latent space könnte überparametrisiert sein. 
+
+
+
+
+————————
+
+Experiments:
+
+Low LR: 2*1e-6 —> loss 0.8
+standard LR: 2*1e-4 —> loss 0.8
+High LR: 2*1e-2 —> loss 0.8
+
+Large Batches: 48 —> loss 0.8
+standard batches: 24 —> loss 0.8
+small batches: 6 —> loss 0.8
+
+many blocks: 60 —> loss 0.8
+standard blocks: 30 —> loss 0.8
+few blocks: 10 —> loss 0.8
+
+many res channles: 256 —> loss 0.8
+standard res channels: 64 —> loss 0.8
+
+many timesteps: 500 —> loss 0.8
+standard time steps: 50 —> 0.8
+
+with conditioner: True —> loss 0.8
+with conditioner: False -> loss 0.8
+
+simple CNN with 3 2dConv layers stays at same loss of 0.8
+
+Remove sqrt in this calculation: —> loss 0.8     
+latent = torch.sqrt(alpha_cum[t])*latent + torch.sqrt(1-alpha_cum[t])*noise 
+
+MSE Loss (both models) —> loss 1.0 
+
+floating point precision: 32 —> 0.8
+floating point precision: 16 —> 0.8
+
+flattening input (latent space variables): —> loss ~0.65
+
+flattened input + using 500 diffusion steps: —> loss ~0.25
+
+
+flattened input + using 1000 diffusion steps: —> loss ~0.21
+
+Increasing number of diff steps from 1000 -> 2000 reduces loss on EPOCH 1 from 0.37 to 0.24
+
+increasing the number of channels in spectrogram conditioner makes loss function for first few epochs smoother —> but have to train for longer to get definitive result
+
+Doubling learning rate increased loss
+
+Halving batch size to 36 and doubling spec conditioner channels to 128 —> this seems to reduce the loss curve. However it still seems a bit choppy, already increasing loss after 3 epochs
+
+Reducing learning rate from 2 * 1e-4 to 6 * 1e-5 —> loss is basically the same pattern
+
+Setting learning rate to 2*1e-4, reducing batch size to 18; increasind residual channels to 128 —> loss is lower
+
+adding 2 more conv transpose layers to spec conditioner —> loss is worse
+
+removing the two extra conv layers and reducing channels from 128 to 1 —> loss approx the same as with two conv layers and 128; but training is faster and less memory
+
+Taking mean of multiple Rave encodings results in something sounding like a bad mashup of three songs. 
+
+Increasing num blocks from 30 to 50, keeping res channels at 128 (up from 64) —> 11M params —> loss is higher for first 2 epochs
+
+30 blocks; 256 res channels 21M params —> loss only slightly lower 
+
+26.August:
+when comparing samples generated by diffwave sampling and RAVE audio encodings, The generated samples have very high mins, max, very high variance, means that are note zero. The encoded audios have min/max around 4 usually, and mean around zero
+—> AudioLDM noise schedule leads to smaller min max values etc
+—> DiffWave noise schedule leads to wayy higher min max values etc
+
+changing noise schedule to: 1e-5, 0.0085 seems to improve the audio quality of a generated sample. However it generates the same audio regardless of the spectrogram conditioner
+
+—> conditioning_variable magnitude is way smaller than the sample —> i think thats why it does not have any influence
+
+—> The problem is that the magnitude of input x for DiffWave.forward() is much larger than the magnitude of the conditioner and also of the timestep embedding t.
+
+Experiment: Scale conditioning var by constant 5 and normalize: (y + self.conv_conditioner(conditioning_var)*5)/2 and train model with this —> two samples are identical, so no influence from different conditioning vars noticed. 
+
+Note: encoded audio samples follow (almost) a perfect normal distribution. 
+
+
+Experiment: I added batch normalization: Decoded generated diffwave output is silent. Noise schedule used: 1e-4, 0.0085
+Result: loss does not go down if batchnorm is added before each activation function in all blocks
+
+
+Je tiefer die DiffWave block layer ist umso:
+* x wird kleiner (layer 0: 3000)
+* y wird kleiner (layer 0: 6000)
+* conv_conditioner bleibt gleich bei 1000
+* t bleibt ca gleich bei 140
+
+Experiment: i tried scaling the various tensors, x, y, t and conv_conditioner output to similar magnitude as in waveform diffwave, (only in very first DiffWave Block)
+Result: Scaling magnitude in first layer does not have any effect.
+Moreover If i scale it in every diffwaveblock layer, loss does not go down
+
+
+Experiment: use a batchnorm layer for the y output of each diffwaveblock
+—> brings improvement! Also tried batchnorming skip too but didnt change anything compared to only batchnorming y
+
+When looking at magnitudes during sampling:
+In original diffwave: x_t starts at magnitude of around 220 (timestep 50) and ends at around 200
+the model output magnitude is 
+
+when training on variance schedule 1e-5, 0.005, loss is MUCH higher than on 0.0015, 0.0195
+
+Effect on Loss of different variance schedules: see “comparing “variance schedule
+ runs in wandb.
+
+When using large variance schedules the loss goes much lower during training. However sampling seems unstable, with the norm exploding with each timestep.
+—> I am currently experimenting with using PowerTransform on the inference model output.
+—> 
+
+idea/thought: when using batch size 64 there are only 141 update steps in one epoch. When using 1000 diffusion timesteps, the model only sees a fraction of diffusion timesteps in each epoch. Hence if randomly during some epoch some timesteps are sampled that it has not see or only seen fewer times, then the loss is higher
+—> This should be tested!
+
+When training with high variance schedule 1e-4,0.05 the loss is low. Moreover the norm of the model output is actually stable (when changing variance schedule after training, the sampling is unstable)
+However output samples are silent
+
+Experiment: training with var schedule 1e-4, 0.05 leads to unstable sampling process.
+Using powerTrasform to make samples more gaussion does not work (i.e. make samples better)
+
+7.sept
+
+Maybe flattening and reshaping insampling kills the sampling process? Maybe I’m flattening and reshaping in a wrong way, but i dont think so
+
+
+
+9. sept
+scaling data to -1, 1 does not help :(
+
+when inputting noise to decoder —> sample is completely silent
+
+
+Experiment 9. sept 2023
+scaling data to -1, 1 and scaling conditional var with constant and using res channel 128 with batch size 64 and 1e-4, 0.05
+—> very low loss! after 5 epochs already 0.07. This is better than loss on speech on waveform! (Which is now comparable, because data scale was also -1, 1)
+—> samples mostly silent
+
+Experiment 9. sept 2023
+Slowly adding noise to encoded latent. Decoder can still decode fairly well with small noise added, produces choppy sample with medium noise added and if using only noise as input it produces silent sample
+
+
+I visualized a spectrogram. It looks very wide and not high. Is this normal/okay? —> notebook
+
+
+Info found in paper: sigma = beta[n]**0.5 #this sigma is optimal if x_0 is from gaussian; see section 3.2 Denoising Diffusion Probabilistic Models
+
+Experiment:
+Train model with inputs scaled to -1 1
+Noise schedule 0.02 from Denoising DPM paper
+Steps 1000 from denoising dpm paper
+~20k steps
+
+
+Learning: Loss is lower with more diffusion steps! But this is not actually an improvement because a smaller error is added more often during sampling!
+—> When comparing to loss in waveform space, one would have to compare with 50 steps! When training with 50 steps the loss is much higher! (is this correct?!?)
+—> Model is completely undertrained/unable to be trained enough
+
+Moreover in DiffWave and Denoising DPM paper they talk about 1m and 800k update steps respectively. I have never done that many steps
+
+
+Experiment Idea: Rewrite from 1d convs to 2d convs and dont flatten inputs. 
+Embeddings for spectrograms (conditioning variables) can be concatenated along the channel dimension to the sample and then the whole thing is used as input to unet
+
+
+Unet experiment: 
+Loss seems similar to loss after changes from denoising dpm paper (-1,1 scaling, 1e-4, 0.04 var sched). 
+Will do run with about 250k steps
+Have not tried sampling yet
+training seems much faster, eventhough the model is 30M params. Plus the GPU isnt using full capacity in terms of compute and vram?!
+
+
+
+Idea: Also clip noise to -1 to 1
+
+Experiment: Learning a single greyscale image of a panda
+Observation: x_t before clamping is MUCH higher than -1 and 1: Min -142; Max 308
+
+After 10K steps the model does learn to generate a noisy panda! var schedule: 0.0015 , 0.0195
+
+Longer training does not improve panda quality?! Tried with 30k and 100k training steps
+
+Experiment: try with kaiming normal initialization
+—> no improvement
+
+Experiment: try 100M Param Model
+—> no improvement
+
+Experiment: train on all encodings for 50k steps with 15 diff steps
+—> produces some audio but not better than previously with 10 diff steps
+
+
+———————
+
+I tried manually adding noise to panda to see how poorly the network is reproducing the panda.
+I would say the network still leaves ROUGHLY sample + 1.5*noise.
+This is too much noise!
+When manually adding noise to a latent encoding, networks stops producing any sound at sample + 1*noise (I BELIEVE, NEED TO RECHECK)
+
+
+Experiment: train 8M param unet on panda for 1Mio steps
+—> after 500k steps, loss seems to be a bit lower but generated image is very poor. Worse than at 10k and 30k steps
+
+
+Experiment: predixt x_t-1 directly without predicting noise —> weird noise output
+
+Experiment: only ONE diffusion step —> noise input target is not noisy latent —> predicts perfect panda
+
+Experiment: onyl ONE diffusion step on encoded audio —> RAVE can generate AUDIO!
+
+Experiment: train with ONE diff step on whole dataset —> loss does not go down
+
+Conclusion: Something is wrong with the sampling process when using more than 1 diff step. not with training!
+
+
+
+
+
+Experiment:
+Linear noise schedule from 1e-4 to 1
+Model predicts x_t-1
+—> Perfectly recreates panda if model makes direct prediction from noise to panda
+—> worse prediction if model makes one extra step (e.g. 3 DIFFUSION_STEPS in config)
+—> panda seems a bit worse with 10 diffusion steps
+—> 100 steps: model produces trash
+Note: model makes DIFFUSION_STEPS-2 number of predictions. 
+
+
+Experiment:
+I trackd the generated samples at every inference step:
+10 steps: clear progression from noisy to not noisy
+100 steps: weird patterns appear after a few steps
+50: steps —> similar to 100 steps
+
+
+
+Experiment:
+Train unet predicting x_t with 10 diff steps —> PRODUCES AUDIO!!! loos approx 0.03-0.04
+
+—> if using only 2 diff steps —> loss does not go down, stays at around 0.2
+
+
+Je weniger diffusion steps umso einfacher und besser lernt das model ein einzelnes sample.
+—> Stimmt das?!?!? Mit zb 5 diff steps gibt es komische streifen im Panda, die bei 20 nicht da waren
+
+Observation: The more diffusions steps are used, the lower the loss has to be for good sample quality
+
+
+
+Experiment:
+Trained unet with 2 diff steps for 1000 epochs —-> Good results! Even A spectrogram which is not in train data, produced music
+—> when training for 500 more epochs suddenly the spectrogram which was not in train data, sounds terrible?
+
+
+
+—> Noise scheduling als Teil der Bachelor arbeit: zb CNN diffusion network auf MNIST zu trainieren und 10 selbst erfundene noise schedules ausprobieren —> checken was dann passiert.
+Diffusion implementations: https://github.com/topics/diffusion-model
+https://arxiv.org/abs/2006.11239 
+[2006.11239] Denoising Diffusion Probabilistic Models (arxiv.org)
+On the importance of noise scheduling: https://arxiv.org/abs/2301.10972 
+
+https://huggingface.co/blog/annotated-diffusion
+The Annotated Diffusion Model (huggingface.co) 
+
+
+
+
+Notes 30.sept:
+Implemented changes of Importance of noise scheduling paper (uniform timesteps during training)
+weirdly the cleanest samples are produced around denoising step 280, when using 1000 denoising steps or around 8 when using 20 denoising steps. 
+The model is unable to predict the noise well, when the noise that is added back is getting smaller?!
+When logging loss during sampling, it is high for later denoising steps (with linear schedule! maybe different schedules help)
+
+
+Szenario mit 1000 Diffusion Steps
+WEIRD: Wenn das modell auf einer continuous time step schedule trainiert wird von 0 bis 1, und dann beim sampling nach den ersten 30%  (300)Scritten abgebrochen wird, dann kommt ein gutes Sample. Mehr denoising Schritte erzeugen ein schlechteres Sample.
+
+ABER: Wenn das Modell jetzt nur auf einer continuous time step schedule trainiert wird die nur von 0.7 bis 1 geht, dann produzieren nur die 30% (100 Steps) ein besseres sample als die ersten 300 Steps!?
+
+
+—> When logging loss per diffusion step (with 10 bins for the timesteps), then the loss for the smaller timesteps (e.g. 0.1, 0.2, 0.3) does seem a little bit higher, but still pretty low with around 0.05. IMO this does not justify the large noise increase for further sampling, but I’m not sure
+
+
+
+Silvan call notes:
+
+1) Ich habe versucht einen Panda zu rekonstruieren
+2) —> Resultat war sehr noisy panda —> schlussfolgerung ist dass die Samples von dem Diffusion model zu noisy für den Decoder sind 
+4) wenn ich direkt x_t predicte mit einem einzigen schritt von noise auf sample dann rekonstruiert das model den Panda perfekt
+5) Experiment für 10k steps mit unterschiedlicher Anzahlan Diff steps:
+—> mit mehreren schritten ist der Loss zwar viel niedriger aber die Sample qualität ist schlechter
+6) Wenn zu viele steps verwendet werden (zB 30 oder 50) dann kommen komische Muster beim panda rekonstruieren (Panda ist nicht mehr erkennabr)
+7) ich habe das model mit einem einzigen DiffWave schritt auf 9k samples für 3000 epochs trainiert
+—> Kann training samples halbwegs rekonstruieren
+—> samples die nicht im Train set sind, konnten besser rekonstruiert werden bei 1k Schritten als bei 3k schritten! Overfitting?!
+
+Next steps:
+Validation Loss loggen
+Mehr diffusion schritte?!
+
