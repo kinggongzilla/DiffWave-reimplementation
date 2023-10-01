@@ -2,6 +2,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import numpy as np
+import math
 
 #Takes latent sample as input
 # transpose convolutional block that takes 1 channel of shape (128, 109) as input and outputs 1 channel of shape (128, 128)
@@ -88,10 +89,7 @@ class input_timestep(torch.nn.Module):
 
     #project diffusion timestep into latent space
     def forward(self, t):
-        if t.dtype in [torch.int32, torch.int64]:
-            x = self.embedding[t]
-        else:
-            x = self._lerp_embedding(t)
+        x = self.create_timestep_embedding(t, 128)
         x = self.projection1(x)
         x = self.silu1(x)
         x = self.projection2(x)
@@ -111,3 +109,18 @@ class input_timestep(torch.nn.Module):
         table = steps * 10.0**(dims * 4.0 / 63.0)     # [T,64]
         table = torch.cat([torch.sin(table), torch.cos(table)], dim=1)
         return table
+    
+    def create_timestep_embedding(self, t: float, dim: int):
+        assert 0 <= t <= 1, "Input t must be a floating point number between 0 and 1"
+
+        # Create a tensor of size `dim` for the timestep embedding
+        timestep_embedding_cos = torch.zeros(dim)
+        timestep_embedding_sin = torch.zeros(dim)
+        
+        # Fill the tensor with values derived from the input `t`
+        for i in range(dim):
+            timestep_embedding_cos[i] = t * math.cos(i / dim * math.pi * t)
+            timestep_embedding_sin[i] = t * math.sin(i / dim * math.pi * (1-t))
+        
+        # Concatenate the tensors together and return
+        return (timestep_embedding_cos + timestep_embedding_sin).to('cuda')

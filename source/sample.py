@@ -12,7 +12,7 @@ torch.manual_seed(42)
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
 #default path to model used for sampling/inference
-checkpoint = "./output/models/UNET_DIF_STEPS_1000_B_SIZE_128_LR_0.0002_EPOCHS_100000_CONDITIONING_True-v1.ckpt" 
+checkpoint = "./output/models/UNET_DIF_STEPS_1000_B_SIZE_128_LR_0.0002_EPOCHS_5000_CONDITIONING_False-v1.ckpt" 
 
 if WITH_CONDITIONING:
     #default to using first file in mel_spectrogram folder as conditioning variable

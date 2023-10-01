@@ -61,7 +61,7 @@ class UNet(nn.Module):
     """ Classifier """
     self.outputs = nn.Conv2d(64, out_c, kernel_size=1, padding=0)
 
-  def forward(self, inputs, t, conditioning_var=None):
+  def forward(self, inputs,):
     """ Encoder """
     s1, p1 = self.e1(inputs)
     s2, p2 = self.e2(p1)

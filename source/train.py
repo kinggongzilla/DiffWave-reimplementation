@@ -30,11 +30,11 @@ def train(model_output_path='output/models/'):
     print("Device: ", device)
 
     #default data location
-    # data_path = os.path.join('data/panda')
+    data_path = os.path.join('data/panda')
     # data_path = os.path.join('data/encoded_audio')
     # conditional_path = os.path.join('data/mel_spectrograms') if WITH_CONDITIONING else None
 
-    data_path = os.path.join('../data/encoded_audio_unet/')
+    # data_path = os.path.join('../data/encoded_audio_unet/')
     conditional_path = os.path.join('../data/mel_spectrograms_unet') if WITH_CONDITIONING else None
     model_checkpoint = None
 
@@ -83,7 +83,7 @@ def train(model_output_path='output/models/'):
         chunked_data,
         batch_size=BATCH_SIZE,
         # shuffle=True,
-        num_workers=24, 
+        num_workers=1, 
         )
 
     #initialize model
