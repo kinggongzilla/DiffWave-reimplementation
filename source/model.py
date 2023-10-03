@@ -53,8 +53,8 @@ class DenoisingModel(nn.Module):
 
             #code below actually performs the sampling
             for n in tqdm(range(TIME_STEPS)):
-                t_now = torch.tensor(min(1 - n / TIME_STEPS, 0.99)).to(x_t.device)
-                t_next = torch.tensor(max(1 - (n+1) / TIME_STEPS, 0)).to(x_t.device)
+                t_now = torch.tensor(min(1 - n / TIME_STEPS, 0.999)).to(x_t.device)
+                t_next = torch.tensor(max(1 - (n+1) / TIME_STEPS, 0.0001)).to(x_t.device)
 
                 # delta_t = t_now - t_next
 
@@ -70,16 +70,16 @@ class DenoisingModel(nn.Module):
 
                 np.save("output/samples/samples_minus_noise/samples_minus_noise_" + str(n), np.clip(x_t.squeeze(0).squeeze(0).cpu().numpy(), -1.0, 1.0))
 
-                if t_now < 0.70:
-                    break
+                # if t_now < 0.70:
+                #     break
 
                 if n < TIME_STEPS - 1:
                     if n % 10 == 0:
                         print("t_now: ", t_now)
                         print(f"difference to added noise at step: {n}: ", F.l1_loss(noise_pred, previous_noise))
-                    noise = torch.randn_like(x_t)
-                    previous_noise = noise
-                    x_t = torch.sqrt(gamma(t_next)) * x_t + torch.sqrt(1 - gamma(t_next)) * noise
+                    # noise = torch.randn_like(x_t)
+                    # previous_noise = noise
+                    x_t = torch.sqrt(gamma(t_next)) * x_t + torch.sqrt(1 - gamma(t_next)) * noise_pred
                     # sigma = ((1.0 - gamma(t_next)) / (1.0 - gamma(t_now)) * beta_now)**0.5
                     # x_t += sigma * noise
 
@@ -116,8 +116,6 @@ class LitModel(pl.LightningModule):
         #generate random integer between 1 and number of diffusion timesteps
         t = torch.rand(1).to(device)
         # t = 0.7 + (t * (1 - 0.7))
-        # t = torch.randint(0, TIME_STEPS, (1,)).to(device) / TIME_STEPS
-
 
         noise = torch.randn(x_0.shape).to(device)
 
@@ -139,12 +137,12 @@ class LitModel(pl.LightningModule):
 
         bins = np.arange(0, 1.1, 0.1)
         bin_number = np.digitize(t.item(), bins)
-        self.log(f'diffusion_step_{bin_number}_loss', batch_loss, on_epoch=True)
+        self.log('train_loss', batch_loss, on_epoch=True)
 
-        self.log_dict({
-            'train_loss': batch_loss,
-            f'diffusion_step_{bin_number}_loss': batch_loss,
-        }, on_epoch=True)
+        # self.log_dict({
+        #     'train_loss': batch_loss,
+        #     f'diffusion_step_{bin_number}_loss': batch_loss,
+        # }, on_epoch=True)
 
         return batch_loss
     

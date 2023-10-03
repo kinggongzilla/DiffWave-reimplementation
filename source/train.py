@@ -30,13 +30,14 @@ def train(model_output_path='output/models/'):
     print("Device: ", device)
 
     #default data location
-    data_path = os.path.join('data/panda')
+    # data_path = os.path.join('data/panda')
     # data_path = os.path.join('data/encoded_audio')
     # conditional_path = os.path.join('data/mel_spectrograms') if WITH_CONDITIONING else None
 
-    # data_path = os.path.join('../data/encoded_audio_unet/')
+    data_path = os.path.join('../data/encoded_audio_unet/')
     conditional_path = os.path.join('../data/mel_spectrograms_unet') if WITH_CONDITIONING else None
-    model_checkpoint = None
+    model_checkpoint = 'output/models/diffusion_trained_on_2kepochs.ckpt'
+    # model_checkpoint = None
 
     #example: python main.py path/to/data
     if len(sys.argv) > 1:
@@ -72,7 +73,7 @@ def train(model_output_path='output/models/'):
         mode='min',
         dirpath=model_output_path,
         filename=f'UNET_DIF_STEPS_{TIME_STEPS}_B_SIZE_{BATCH_SIZE}_LR_{LEARNING_RATE}_EPOCHS_{EPOCHS}_CONDITIONING_{WITH_CONDITIONING}',
-        save_top_k=1,
+        save_top_k=3,
     )
 
     #initialize dataset
@@ -83,7 +84,7 @@ def train(model_output_path='output/models/'):
         chunked_data,
         batch_size=BATCH_SIZE,
         # shuffle=True,
-        num_workers=1, 
+        num_workers=24, 
         )
 
     #initialize model

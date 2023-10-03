@@ -119,8 +119,8 @@ class input_timestep(torch.nn.Module):
         
         # Fill the tensor with values derived from the input `t`
         for i in range(dim):
-            timestep_embedding_cos[i] = t * math.cos(i / dim * math.pi * t)
-            timestep_embedding_sin[i] = t * math.sin(i / dim * math.pi * (1-t))
+            timestep_embedding_cos[i] = t * math.cos(i / dim * math.pi * t * 2)
+            timestep_embedding_sin[i] = t * math.sin(i / dim * math.pi * (1-t) * 2)
         
         # Concatenate the tensors together and return
         return (timestep_embedding_cos + timestep_embedding_sin).to('cuda')

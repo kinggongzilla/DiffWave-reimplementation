@@ -12,11 +12,11 @@ torch.manual_seed(42)
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
 #default path to model used for sampling/inference
-checkpoint = "./output/models/UNET_DIF_STEPS_1000_B_SIZE_128_LR_0.0002_EPOCHS_5000_CONDITIONING_False-v1.ckpt" 
+checkpoint = "./output/models/UNET_DIF_STEPS_1000_B_SIZE_128_LR_0.0002_EPOCHS_3000_CONDITIONING_True.ckpt" 
 
 if WITH_CONDITIONING:
     #default to using first file in mel_spectrogram folder as conditioning variable
-    conditioner_file_name = os.listdir("data/mel_spectrograms/")[0]
+    conditioner_file_name = os.listdir("../data/mel_spectrograms_unet/")[8999]
 
 #get path to model, if given as argument
 if len(sys.argv) > 1:
@@ -58,10 +58,6 @@ for i in range(y.shape[0]):
 
     # scale from (-1, 1) to gaussian (for rave latents)
     y = y/y.std()
-
-    # scale from (-1, 1) to (0, 255) for images
-    # z = (y + 1) / 2
-    # y = z * (255 - 0) + 0 # IMAGE: apply the reverse normalization 
     
     output = y[i].squeeze(0)
     
