@@ -47,19 +47,19 @@ class UNet(nn.Module):
   def __init__(self, in_c=3, out_c=1):
     super().__init__()
     """ Encoder """
-    self.e1 = encoder_block(in_c, 64)
-    self.e2 = encoder_block(64, 128)
-    self.e3 = encoder_block(128, 256)
-    self.e4 = encoder_block(256, 512)
+    self.e1 = encoder_block(in_c, 64 * 2)
+    self.e2 = encoder_block(64 * 2, 128 * 2)
+    self.e3 = encoder_block(128 * 2, 256 * 2)
+    self.e4 = encoder_block(256 * 2, 512 * 2)
     """ Bottleneck """
-    self.b = conv_block(512, 1024)
+    self.b = conv_block(512 * 2, 1024 * 2)
     """ Decoder """
-    self.d1 = decoder_block(1024, 512)
-    self.d2 = decoder_block(512, 256)
-    self.d3 = decoder_block(256, 128)
-    self.d4 = decoder_block(128, 64)
+    self.d1 = decoder_block(1024 * 2, 512 * 2)
+    self.d2 = decoder_block(512 * 2, 256 * 2)
+    self.d3 = decoder_block(256 * 2, 128 * 2)
+    self.d4 = decoder_block(128 * 2, 64 * 2)
     """ Classifier """
-    self.outputs = nn.Conv2d(64, out_c, kernel_size=1, padding=0)
+    self.outputs = nn.Conv2d(64 * 2, out_c, kernel_size=1, padding=0)
 
   def forward(self, inputs, t, conditioning_var=None):
     """ Encoder """
