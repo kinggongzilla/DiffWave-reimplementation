@@ -11,8 +11,11 @@ from model import DenoisingModel, LitModel
 from unet import UNet
 from dataset import LatentsData
 from config import EPOCHS, BATCH_SIZE, LEARNING_RATE, TIME_STEPS, VARIANCE_SCHEDULE, SAMPLE_RATE, MAX_SAMPLES, WITH_CONDITIONING
+import datetime
 
 def train(model_output_path='output/models/'):
+
+    model_output_path = os.path.join(model_output_path, datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S"))
 
     if not os.path.exists(model_output_path):
         os.makedirs(model_output_path)
@@ -68,11 +71,12 @@ def train(model_output_path='output/models/'):
         }
     )
 
+    model_filename = f'UNET_DIF_STEPS_{TIME_STEPS}_B_SIZE_{BATCH_SIZE}_LR_{LEARNING_RATE}_EPOCHS_{EPOCHS}_CONDITIONING_{WITH_CONDITIONING}'
     checkpoint_callback = ModelCheckpoint(
         monitor='train_loss',
         mode='min',
         dirpath=model_output_path,
-        filename=f'UNET_DIF_STEPS_{TIME_STEPS}_B_SIZE_{BATCH_SIZE}_LR_{LEARNING_RATE}_EPOCHS_{EPOCHS}_CONDITIONING_{WITH_CONDITIONING}',
+        filename=model_filename,
         save_top_k=3,
     )
 
@@ -95,6 +99,8 @@ def train(model_output_path='output/models/'):
     trainer = pl.Trainer(callbacks=[checkpoint_callback], max_epochs=EPOCHS, accelerator="auto", devices="auto", precision=16, logger=wandb_logger)
 
     trainer.fit(model=lit_model, train_dataloaders=trainloader, ckpt_path=model_checkpoint)
+
+    wandb.save(model_output_path + "/*")
 
 if __name__ == '__main__':
     train()
