@@ -11,8 +11,12 @@ from model import DenoisingModel, LitModel
 from unet import UNet
 from dataset import LatentsData
 from config import EPOCHS, BATCH_SIZE, LEARNING_RATE, TIME_STEPS, VARIANCE_SCHEDULE, SAMPLE_RATE, MAX_SAMPLES, WITH_CONDITIONING
+import datetime
 
 def train(model_output_path='output/models/'):
+
+    model_output_path = os.path.join(model_output_path, datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S"))
+
 
     if not os.path.exists(model_output_path):
         os.makedirs(model_output_path)
@@ -34,7 +38,7 @@ def train(model_output_path='output/models/'):
     # conditional_path = os.path.join('data/mel_spectrograms') if WITH_CONDITIONING else None
     data_path = os.path.join('../data/encoded_audio_unet/')
     conditional_path = os.path.join('../data/mel_spectrograms_unet') if WITH_CONDITIONING else None
-    model_checkpoint = 'output/models/UNET_DIF_STEPS_2_B_SIZE_128_LR_2e-05_EPOCHS_1000_CONDITIONING_True.ckpt'
+    model_checkpoint = None
 
     #example: python main.py path/to/data
     if len(sys.argv) > 1:
@@ -92,6 +96,8 @@ def train(model_output_path='output/models/'):
     trainer = pl.Trainer(callbacks=[checkpoint_callback], max_epochs=EPOCHS, accelerator="auto", devices="auto", precision=16, logger=wandb_logger)
 
     trainer.fit(model=lit_model, train_dataloaders=trainloader, ckpt_path=model_checkpoint)
+
+    wandb.save(model_output_path + "/*")
 
 if __name__ == '__main__':
     train()

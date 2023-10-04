@@ -12,11 +12,11 @@ torch.manual_seed(42)
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
 #default path to model used for sampling/inference
-checkpoint = "./output/models/UNET_DIF_STEPS_2_B_SIZE_128_LR_2e-05_EPOCHS_1000_CONDITIONING_True.ckpt" 
+checkpoint = "./output/models/2023-10-03_09-26-15/UNET_DIF_STEPS_2_B_SIZE_128_LR_2e-05_EPOCHS_1000_CONDITIONING_True.ckpt" 
 
 if WITH_CONDITIONING:
     #default to using first file in mel_spectrogram folder as conditioning variable
-    conditioner_file_name = os.listdir("../data/mel_spectrograms/")[8999]
+    conditioner_file_name = os.listdir("../data/mel_spectrograms_validation/")[2]
 
 #get path to model, if given as argument
 if len(sys.argv) > 1:
@@ -39,7 +39,7 @@ model.eval()
 #load conditioning variable (spectrogram)
 conditioning_var=None
 if WITH_CONDITIONING:
-    conditioning_var = torch.from_numpy(np.load(os.path.join("../data/mel_spectrograms_unet/", conditioner_file_name)))
+    conditioning_var = torch.from_numpy(np.load(os.path.join("../data/mel_spectrograms_validation/", conditioner_file_name)))
     conditioning_var = torch.unsqueeze(conditioning_var[0:1, :, :], 0).to(device)
 
 #generate starting noise
