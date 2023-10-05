@@ -1,8 +1,8 @@
 import torch
 
-EPOCHS = 3000
+EPOCHS = 2000
 BATCH_SIZE = 128
-LEARNING_RATE = 2 * 1e-4
+LEARNING_RATE = 2 * 1e-5
 TIME_STEPS = 1000
 VARIANCE_SCHEDULE = torch.linspace(1e-5, 1, TIME_STEPS)
 MAX_SAMPLES = 9000 #9000 # Use "None" for all samples in data input folder

@@ -77,7 +77,7 @@ class DenoisingModel(nn.Module):
                     if n % 10 == 0:
                         print("t_now: ", t_now)
                         print(f"difference to added noise at step: {n}: ", F.l1_loss(noise_pred, previous_noise))
-                    # noise = torch.randn_like(x_t)
+                    noise = torch.randn_like(x_t)
                     # previous_noise = noise
                     x_t = torch.sqrt(gamma(t_next)) * x_t + torch.sqrt(1 - gamma(t_next)) * noise_pred
                     # sigma = ((1.0 - gamma(t_next)) / (1.0 - gamma(t_now)) * beta_now)**0.5

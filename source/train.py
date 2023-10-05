@@ -39,7 +39,7 @@ def train(model_output_path='output/models/'):
 
     data_path = os.path.join('../data/encoded_audio_unet/')
     conditional_path = os.path.join('../data/mel_spectrograms_unet') if WITH_CONDITIONING else None
-    model_checkpoint = 'output/models/diffusion_trained_on_2kepochs.ckpt'
+    model_checkpoint = None
     # model_checkpoint = None
 
     #example: python main.py path/to/data
