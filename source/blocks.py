@@ -42,7 +42,6 @@ class input_spectrogram(nn.Module):
         x = self.tanh(x)
         return x
 
-
 #try interpolation instead of convoultions 
 class SpectrogramDownscaler(nn.Module):
     def __init__(self, output_size):
@@ -57,7 +56,6 @@ class SpectrogramDownscaler(nn.Module):
     
 
 #output block
-
 class output_latent(nn.Module):
     def __init__(self, in_c, out_c):
         super().__init__()
@@ -74,7 +72,6 @@ class output_latent(nn.Module):
         x = self.conv3(x)
         x = self.tanh(x)
         x = self.conv4(x)
-        # x = self.tanh(x)
         return x
     
 class input_timestep(torch.nn.Module):
@@ -86,7 +83,6 @@ class input_timestep(torch.nn.Module):
         self.projection2 = torch.nn.Linear(128, 128)
         self.silu2 = torch.nn.SiLU()
 
-
     #project diffusion timestep into latent space
     def forward(self, t):
         x = self.create_timestep_embedding(t, 128)
@@ -94,8 +90,8 @@ class input_timestep(torch.nn.Module):
         x = self.silu1(x)
         x = self.projection2(x)
         x = self.silu2(x)
-
         return x
+    
     def _lerp_embedding(self, t):
         low_idx = torch.floor(t).long()
         high_idx = torch.ceil(t).long()

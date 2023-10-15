@@ -1,29 +1,23 @@
 import os
 import sys
 import torch
-import torch.nn.functional as F
-from torch.utils.data import Dataset
 import pytorch_lightning as pl
 from pytorch_lightning.callbacks import ModelCheckpoint
 import wandb
 from pytorch_lightning.loggers import WandbLogger
-from model import DenoisingModel, LitModel
-from unet import UNet
+from source.model.model import DenoisingModel, LitModel
 from dataset import LatentsData
 from config import EPOCHS, BATCH_SIZE, LEARNING_RATE, TIME_STEPS, VARIANCE_SCHEDULE, SAMPLE_RATE, MAX_SAMPLES, WITH_CONDITIONING
 import datetime
 
 def train(model_output_path='output/models/'):
-
-    model_output_path = os.path.join(model_output_path, datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S"))
-
-    if not os.path.exists(model_output_path):
-        os.makedirs(model_output_path)
-
-    torch.manual_seed(42)
-
     #start with empty cache
     torch.cuda.empty_cache()
+    torch.manual_seed(42)
+
+    model_output_path = os.path.join(model_output_path, datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S"))
+    if not os.path.exists(model_output_path):
+        os.makedirs(model_output_path)
 
     #set precision
     torch.set_float32_matmul_precision('medium')
@@ -45,14 +39,10 @@ def train(model_output_path='output/models/'):
     #example: python main.py path/to/data
     if len(sys.argv) > 1:
         data_path = sys.argv[1]
-
     if len(sys.argv) > 2:
         conditional_path = sys.argv[2]
-
     if len(sys.argv) > 3:
         model_checkpoint = sys.argv[3]
-
-
 
     #initialize wandb
     wandb_logger = WandbLogger(
@@ -97,9 +87,7 @@ def train(model_output_path='output/models/'):
 
     #train model
     trainer = pl.Trainer(callbacks=[checkpoint_callback], max_epochs=EPOCHS, accelerator="auto", devices="auto", precision=16, logger=wandb_logger)
-
     trainer.fit(model=lit_model, train_dataloaders=trainloader, ckpt_path=model_checkpoint)
-
     wandb.save(model_output_path + "/*")
 
 if __name__ == '__main__':

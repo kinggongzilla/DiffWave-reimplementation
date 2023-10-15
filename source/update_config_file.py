@@ -2,6 +2,7 @@
 import sys
 
 # updates config file with new number of timesteps for experimentation
+# this function is used together with run_experiments.sh script
 #Example: update_config_file("config.py", 100)
 def update_config_file(file_path = 'source/config.py'):
 
