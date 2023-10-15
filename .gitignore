@@ -32,3 +32,9 @@ test_notebook.ipynb
 nohup.out
 .vscode/launch.json
 .vscode/settings.json
+output/models/2023-10-03_09-26-15_100M_params_one_shot/one-shot-421-epochs.ckpt
+output/models/2023-10-04_12-06-54/UNET_DIF_STEPS_1000_B_SIZE_128_LR_2e-05_EPOCHS_1000_CONDITIONING_True-v1.ckpt
+output/models/2023-10-04_12-06-54/UNET_DIF_STEPS_1000_B_SIZE_128_LR_2e-05_EPOCHS_1000_CONDITIONING_True-v2.ckpt
+output/models/2023-10-04_12-06-54/UNET_DIF_STEPS_1000_B_SIZE_128_LR_2e-05_EPOCHS_1000_CONDITIONING_True.ckpt
+output/models/2023-10-05_11-27-11/UNET_DIF_STEPS_2_B_SIZE_128_LR_2e-05_EPOCHS_1000_CONDITIONING_True.ckpt
+output/models/2023-10-05_12-24-05/UNET_DIF_STEPS_2_B_SIZE_128_LR_2e-05_EPOCHS_2000_CONDITIONING_True.ckpt
