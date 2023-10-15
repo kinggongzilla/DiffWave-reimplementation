@@ -1,6 +1,5 @@
 import os
 import sys
-from pydub import AudioSegment
 from config import MAX_SAMPLES, SAMPLE_RATE, WINDOW_LENGTH, HOP_LENGTH, N_FFT, N_MELS, FMIN, FMAX, POWER, NORMALIZED, N_FFT, N_MELS, FMIN, FMAX, POWER, NORMALIZED, FMIN, FMAX, POWER, NORMALIZED
 import torchaudio
 import numpy as np
@@ -41,8 +40,6 @@ def transform_to_spectrogram(
     mel_spectrogram = 20 * torch.log10(torch.clamp(mel_spectrogram, min=1e-5)) - 20
     mel_spectrogram = torch.clamp((mel_spectrogram + 100) / 100, 0.0, 1.0)
     np.save(os.path.join(out_path, f'{filename}.spec.npy'), mel_spectrogram.cpu().numpy())
-
-
 
 #load data of one wav and split it into chunks
 def chop_wav(song_id: str, audio_path: str, out_dir: str, length: int):

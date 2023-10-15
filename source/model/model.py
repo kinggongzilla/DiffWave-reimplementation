@@ -7,7 +7,7 @@ import pytorch_lightning as pl
 from tqdm import tqdm
 import wandb
 from config import VARIANCE_SCHEDULE, TIME_STEPS, WITH_CONDITIONING, LEARNING_RATE, PRED_NOISE, NOISE_SCHEDULE_FUNC
-from source.model.unet import UNet
+from model.unet import UNet
 from blocks import input_latent, input_spectrogram, output_latent, input_timestep
 import math
 

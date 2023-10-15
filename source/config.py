@@ -3,12 +3,12 @@ import torch
 #CONFIG TRAINING AND SAMPLING
 EPOCHS = 2000
 BATCH_SIZE = 128
+PRED_NOISE=True
 LEARNING_RATE = 2 * 1e-5
-TIME_STEPS = 1000
+TIME_STEPS = 2 if not PRED_NOISE else 1000
 VARIANCE_SCHEDULE = torch.linspace(1e-5, 1, TIME_STEPS)
 MAX_SAMPLES = 9000 #9000 # Use "None" for all samples in data input folder
 WITH_CONDITIONING=True
-PRED_NOISE=True
 NOISE_SCHEDULE_FUNC = 'linear' # 'exp' # 'cos'
 
 #CONFIG DATA PREP 

@@ -1,11 +1,12 @@
 import os
 import sys
+sys.path.insert(0, '/home/david/JKU/thesis/DiffWave-reimplementation/source')
+from model.model import DenoisingModel, LitModel
 import torch
 import pytorch_lightning as pl
 from pytorch_lightning.callbacks import ModelCheckpoint
 import wandb
 from pytorch_lightning.loggers import WandbLogger
-from source.model.model import DenoisingModel, LitModel
 from dataset import LatentsData
 from config import EPOCHS, BATCH_SIZE, LEARNING_RATE, TIME_STEPS, VARIANCE_SCHEDULE, SAMPLE_RATE, MAX_SAMPLES, WITH_CONDITIONING
 import datetime

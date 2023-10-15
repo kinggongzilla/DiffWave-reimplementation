@@ -1,10 +1,11 @@
 import os
 import sys
+sys.path.insert(0, '/home/david/JKU/thesis/DiffWave-reimplementation/source')
 import numpy as np
 import torch
 import torchaudio
 import wandb
-from source.model.model import DenoisingModel, LitModel
+from model.model import DenoisingModel, LitModel
 from config import WITH_CONDITIONING, PRED_NOISE
 
 torch.manual_seed(42)
