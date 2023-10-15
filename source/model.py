@@ -87,6 +87,18 @@ class DenoisingModel(nn.Module):
 
             x_t = torch.clamp(x_t, -1.0, 1.0)
         return x_t.squeeze(1)
+    
+    #generate a sample from noise input
+    def sample_xt(self, x_t, conditioning_var=None):
+        with torch.no_grad():
+
+        #sample t-1 sample directly, do not predict noise
+            for n in tqdm(range(len(VARIANCE_SCHEDULE) - 2, -1, -1)):
+                x_t = self.forward(x_t, torch.tensor(n+1), conditioning_var)
+
+                np.save("output/samples/every_sample_step/every_sample_step_" + str(n), x_t.squeeze(0).squeeze(1).cpu().numpy())
+
+        return x_t.squeeze(1)
 
 
 
