@@ -1,4 +1,6 @@
+from typing import Any, Optional
 import numpy as np
+from pytorch_lightning.utilities.types import STEP_OUTPUT
 import torch
 import torch.nn as nn
 import torchaudio
@@ -123,7 +125,6 @@ class LitModel(pl.LightningModule):
                 'train_loss': batch_loss,
                 f'diffusion_step_{bin_number}_loss': batch_loss,
             }, on_epoch=True)
-
         else:
             beta = VARIANCE_SCHEDULE.to(device)
             noisy_latent = (1- beta[t])*x_0 + (beta[t])*noise
@@ -134,6 +135,44 @@ class LitModel(pl.LightningModule):
         self.log('train_loss', batch_loss, on_epoch=True)
 
         return batch_loss
+    
+    def validation_step(self, batch, batch_idx):
+        device = self.device
+        scale = 1 #TODO: adjust later?
+        #generate random integer between 1 and number of diffusion timesteps
+        t = torch.rand(1).to(device)
+
+
+        if WITH_CONDITIONING:
+            x_0 = batch[0] # batch size, channels, length 
+        else:
+            x_0 = batch
+
+        noise = torch.randn(x_0.shape).to(device)
+        if NOISE_SCHEDULE_FUNC == 'linear':
+            gamma = lambda t: simple_linear_schedule(t.item())
+        elif NOISE_SCHEDULE_FUNC == 'exp':
+            gamma = lambda t: exponential_schedule(t.item(), tau=0.2)
+        elif NOISE_SCHEDULE_FUNC == 'cos':
+            gamma = lambda t: cosine_schedule(t.item(),)
+
+        conditioning_var = None
+        if WITH_CONDITIONING:
+            conditioning_var = batch[1] 
+
+        if PRED_NOISE:
+            x_t = torch.sqrt(gamma(t)) * scale * x_0 + torch.sqrt(1-gamma(t)) * noise
+            x_t = x_t / x_t.std(dim=(1,2,3), keepdim=True)
+            y_pred = self.model.forward(x_t, t, conditioning_var)
+            batch_loss = F.l1_loss(y_pred, noise)
+        else:
+            beta = VARIANCE_SCHEDULE.to(device)
+            noisy_latent = (1- beta[t])*x_0 + (beta[t])*noise
+            less_noisy_latent = (1- beta[t-1])*x_0 + (beta[t-1])*noise
+            y_pred = self.model.forward(noisy_latent, t, conditioning_var)
+            batch_loss = F.l1_loss(y_pred, less_noisy_latent)
+
+        self.log('train_loss', batch_loss, on_epoch=True)
     
     def configure_optimizers(self):
         optimizer = torch.optim.Adam(self.model.parameters(), lr=LEARNING_RATE)

@@ -32,8 +32,10 @@ def train(model_output_path='output/models/'):
     # data_path = os.path.join('data/encoded_audio')
     # conditional_path = os.path.join('data/mel_spectrograms') if WITH_CONDITIONING else None
 
-    data_path = os.path.join('../data/encoded_audio_unet/')
-    conditional_path = os.path.join('../data/mel_spectrograms_unet') if WITH_CONDITIONING else None
+    data_path = os.path.join('../data/encoded_audio/')
+    conditional_path = os.path.join('../data/mel_spectrograms') if WITH_CONDITIONING else None
+    val_data_path = os.path.join('../data/encoded_audio_validation/')
+    val_conditional_path = os.path.join('../data/mel_spectrograms_validation') if WITH_CONDITIONING else None
     model_checkpoint = None
     # model_checkpoint = None
 
@@ -71,24 +73,33 @@ def train(model_output_path='output/models/'):
         save_top_k=3,
     )
 
-    #initialize dataset
-    chunked_data = LatentsData(latents_dir=data_path, conditional_dir=conditional_path)
+    #initialize datasets
+    train_data = LatentsData(latents_dir=data_path, conditional_dir=conditional_path)
+    val_data = LatentsData(latents_dir=val_data_path, conditional_dir=val_conditional_path)
 
-    #initialize dataloader
+    #initialize train dataloader
     trainloader = torch.utils.data.DataLoader(
-        chunked_data,
+        train_data,
         batch_size=BATCH_SIZE,
         # shuffle=True,
         num_workers=24, 
         )
+     #initialize train dataloader
+    validationloader = torch.utils.data.DataLoader(
+        val_data,
+        batch_size=BATCH_SIZE,
+        # shuffle=True,
+        num_workers=24, 
+        )
+
 
     #initialize model
     model = DenoisingModel()
     lit_model = LitModel(model)
 
     #train model
-    trainer = pl.Trainer(callbacks=[checkpoint_callback], max_epochs=EPOCHS, accelerator="auto", devices="auto", precision=16, logger=wandb_logger)
-    trainer.fit(model=lit_model, train_dataloaders=trainloader, ckpt_path=model_checkpoint)
+    trainer = pl.Trainer(callbacks=[checkpoint_callback], max_epochs=EPOCHS, accelerator="auto", devices="auto", precision=16, logger=wandb_logger, check_val_every_n_epoch=2)
+    trainer.fit(model=lit_model, train_dataloaders=trainloader, val_dataloaders=validationloader, ckpt_path=model_checkpoint)
     wandb.save(model_output_path + "/*")
 
 if __name__ == '__main__':

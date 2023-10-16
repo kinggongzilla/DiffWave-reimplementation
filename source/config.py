@@ -7,11 +7,12 @@ PRED_NOISE=True
 LEARNING_RATE = 2 * 1e-5
 TIME_STEPS = 2 if not PRED_NOISE else 1000
 VARIANCE_SCHEDULE = torch.linspace(1e-5, 1, TIME_STEPS)
-MAX_SAMPLES = 9000 #9000 # Use "None" for all samples in data input folder
 WITH_CONDITIONING=True
 NOISE_SCHEDULE_FUNC = 'linear' # 'exp' # 'cos'
 
 #CONFIG DATA PREP 
+MAX_SAMPLES = 9000 #9000 # Use "None" for all samples in data input folder
+MAX_SAMPLES_VALIDATION = 1000
 SAMPLE_RATE = 44100 #16000 #22050 #44100
 WINDOW_LENGTH=1024
 HOP_LENGTH=256

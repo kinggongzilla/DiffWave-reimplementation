@@ -1,6 +1,6 @@
 import os
 import sys
-from config import MAX_SAMPLES, SAMPLE_RATE, WINDOW_LENGTH, HOP_LENGTH, N_FFT, N_MELS, FMIN, FMAX, POWER, NORMALIZED, N_FFT, N_MELS, FMIN, FMAX, POWER, NORMALIZED, FMIN, FMAX, POWER, NORMALIZED
+from config import MAX_SAMPLES, SAMPLE_RATE, WINDOW_LENGTH, HOP_LENGTH, N_FFT, N_MELS, FMIN, FMAX, POWER, NORMALIZED, N_FFT, N_MELS, FMIN, FMAX, POWER, NORMALIZED, FMIN, FMAX, POWER, NORMALIZED, MAX_SAMPLES_VALIDATION
 import torchaudio
 import numpy as np
 import torch
@@ -41,7 +41,6 @@ def transform_to_spectrogram(
     mel_spectrogram = torch.clamp((mel_spectrogram + 100) / 100, 0.0, 1.0)
     np.save(os.path.join(out_path, f'{filename}.spec.npy'), mel_spectrogram.cpu().numpy())
 
-#load data of one wav and split it into chunks
 def chop_wav(song_id: str, audio_path: str, out_dir: str, length: int):
 
     print('audio_path: ', audio_path)
@@ -77,9 +76,9 @@ def chop_wav(song_id: str, audio_path: str, out_dir: str, length: int):
         end += length
 
 if __name__ == '__main__':
-    in_path=os.path.join('raw_samples')
-    chopped_audio_out_path=os.path.join('data/chunked_audio')
-    mel_specs_out_path=os.path.join('data/mel_spectrograms')
+    in_path=os.path.join('../data/jamendo_techno_validation')
+    chopped_audio_out_path=os.path.join('../data/chunked_audio_validation')
+    mel_specs_out_path=os.path.join('../data/mel_spectrograms_validation')
 
     if len(sys.argv) > 1:
         in_path = sys.argv[1]
@@ -88,11 +87,19 @@ if __name__ == '__main__':
     if len(sys.argv) > 3:
         mel_specs_out_path = sys.argv[3]
 
+    #create output folders if not exist
+    if not os.path.exists(chopped_audio_out_path):
+        os.makedirs(chopped_audio_out_path)
+    if not os.path.exists(mel_specs_out_path):
+        os.makedirs(mel_specs_out_path)
+
     #loop over files in audio_folder_path
     for i, file in enumerate(os.listdir(in_path)):
+        
         #break if max samples reached
-        if len(os.listdir(chopped_audio_out_path)) >= (MAX_SAMPLES):
+        if i >= (MAX_SAMPLES):
             break
+
         chop_wav(i, os.path.join(in_path, file), chopped_audio_out_path, 5 * SAMPLE_RATE)
 
     #generate mel spectrograms from chopped audio

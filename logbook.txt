@@ -2,24 +2,31 @@ ssh -L 6006:localhost:6006 david@kinggongzilla.duckdns.org
 
 tensorboard --logdir=runs
 
+TRAIN: 
 
-rave train --config v2 --db_path ../preprocessed --name rave_run_4_8_2023 —ckpt runs/rave_run_22_7_2023_fe77618ebd/version_3/checkpoints/last.ckpt
+rave train --config v2 --db_path ../data/rave_preprocessed --name rave_run_4_8_2023 —ckpt runs/rave_run_22_7_2023_fe77618ebd/version_3/checkpoints/last.ckpt
 
+rave train --config v2 --db_path ../data/rave_preprocessed_jamendo_techno
 
 
 
 PREPROCESS:
 
-python3 scripts/main_cli.py preprocess --input_path ../data/chunked_audio_unet --output_path ../data/rave_preprocessed_unet
+python3 scripts/main_cli.py preprocess --input_path ../data/chunked_audio --output_path ../data/rave_preprocessed
+
+
 
 ENCODE:
 
- python3 scripts/main_cli.py encode --db_path ../data/rave_preprocessed_unet --encoded_output_path ../data/encoded_audio_unet —-run runs/rave_run_22_7_2023_fe77618ebd
+python3 scripts/main_cli.py encode --db_path ../data/rave_preprocessed --encoded_output_path ../data/encoded_audio —-run runs/rave_run_22_7_2023_fe77618ebd
 
 ENCODE WITH CUSTOM AUDIOFILES DATASET
 python3 scripts/main_cli.py encode --db_path ../data/chunked_audio_unet --encoded_output_path ../data/encoded_audio_unet --run runs/rave_run_22_7_2023_fe77618ebd
 
 DECODE:
+
+python3 scripts/main_cli.py  decode --latents_path  ../data/encoded_audio --decoded_output_path ../data/decoded_audio/rave_decoded_directly --run runs/rave_run_22_7_2023_fe77618ebd/
+
 
 python3 scripts/main_cli.py  decode --latents_path  ../DiffWave-reimplementation/output/samples/new1 --decoded_output_path ../data/decoded_audio/ --run runs/rave_run_22_7_2023_fe77618ebd/
 
