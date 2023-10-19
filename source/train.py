@@ -28,16 +28,11 @@ def train(model_output_path='output/models/'):
     print("Device: ", device)
 
     #default data location
-    # data_path = os.path.join('data/panda')
-    # data_path = os.path.join('data/encoded_audio')
-    # conditional_path = os.path.join('data/mel_spectrograms') if WITH_CONDITIONING else None
-
     data_path = os.path.join('../data/encoded_audio/')
     conditional_path = os.path.join('../data/mel_spectrograms') if WITH_CONDITIONING else None
     val_data_path = os.path.join('../data/encoded_audio_validation/')
     val_conditional_path = os.path.join('../data/mel_spectrograms_validation') if WITH_CONDITIONING else None
     model_checkpoint = None
-    # model_checkpoint = None
 
     #example: python main.py path/to/data
     if len(sys.argv) > 1:

@@ -14,7 +14,7 @@ rave train --config v2 --db_path ../data/rave_preprocessed_jamendo_techno/jamend
 
 
 
-PREPROCESS:
+PREPROCESS: (note preprocessing is actually not necessary in my setup)
 
 python3 scripts/main_cli.py preprocess --input_path ../data/chunked_audio --output_path ../data/rave_preprocessed
 
@@ -22,10 +22,10 @@ python3 scripts/main_cli.py preprocess --input_path ../data/chunked_audio --outp
 
 ENCODE:
 
-python3 scripts/main_cli.py encode --db_path ../data/chunked_audio --encoded_output_path ../data/encoded_audio --run runs/runs/jamendo_techno_16-10-2023_continued_2_fe77618ebd
+python3 scripts/main_cli.py encode --db_path ../data/jamendo_techno_chunked_audio --encoded_output_path ../data/jamendo_techno_encoded_audio --run runs/runs/jamendo_techno_16-10-2023_continued_2_fe77618ebd
 
 ENCODE WITH CUSTOM AUDIOFILES DATASET
-python3 scripts/main_cli.py encode --db_path ../data/chunked_audio_validation --encoded_output_path ../data/encoded_audio_validation --run runs/runs/jamendo_techno_16-10-2023_continued_2_fe77618ebd
+python3 scripts/main_cli.py encode --db_path ../data/jamendo/jamendo_techno_chunked_audio --encoded_output_path ../data/jamendo/jamendo_techno_encoded_audio --run runs/runs/jamendo_techno_16-10-2023_continued_2_fe77618ebd
 
 DECODE:
 

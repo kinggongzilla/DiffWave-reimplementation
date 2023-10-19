@@ -1,8 +1,8 @@
 import torch
 
 #CONFIG TRAINING AND SAMPLING
-EPOCHS = 2000
-BATCH_SIZE = 128
+EPOCHS = 125
+BATCH_SIZE = 64
 PRED_NOISE=True
 LEARNING_RATE = 2 * 1e-5
 TIME_STEPS = 2 if not PRED_NOISE else 1000
@@ -11,7 +11,7 @@ WITH_CONDITIONING=True
 NOISE_SCHEDULE_FUNC = 'linear' # 'exp' # 'cos'
 
 #CONFIG DATA PREP 
-MAX_SAMPLES = 9000 #9000 # Use "None" for all samples in data input folder
+MAX_SAMPLES = None #9000 # Use "None" for all samples in data input folder
 MAX_SAMPLES_VALIDATION = 1000
 SAMPLE_RATE = 44100 #16000 #22050 #44100
 WINDOW_LENGTH=1024

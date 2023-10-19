@@ -1,9 +1,11 @@
+import multiprocessing
 import os
 import sys
 from config import MAX_SAMPLES, SAMPLE_RATE, WINDOW_LENGTH, HOP_LENGTH, N_FFT, N_MELS, FMIN, FMAX, POWER, NORMALIZED, N_FFT, N_MELS, FMIN, FMAX, POWER, NORMALIZED, FMIN, FMAX, POWER, NORMALIZED, MAX_SAMPLES_VALIDATION
 import torchaudio
 import numpy as np
 import torch
+from tqdm import tqdm
 #Note: ffmpeg package required for pydub
 
 def transform_to_spectrogram(
@@ -43,7 +45,6 @@ def transform_to_spectrogram(
 
 def chop_wav(song_id: str, audio_path: str, out_dir: str, length: int):
 
-    print('audio_path: ', audio_path)
     #check if out_dir exists
     if not os.path.exists(out_dir):
         raise 'out_dir does not exist'
@@ -66,7 +67,7 @@ def chop_wav(song_id: str, audio_path: str, out_dir: str, length: int):
 
     for i in range(n_iters):
         #break if max samples reached
-        if len(os.listdir(chopped_audio_out_path)) >= (MAX_SAMPLES):
+        if MAX_SAMPLES is not None and len(os.listdir(chopped_audio_out_path)) >= (MAX_SAMPLES):
             break
         newAudio = audio[:, start:end]
         #save newAudio with file_ending to out_dir with torchaudio
@@ -76,9 +77,9 @@ def chop_wav(song_id: str, audio_path: str, out_dir: str, length: int):
         end += length
 
 if __name__ == '__main__':
-    in_path=os.path.join('../data/jamendo_techno_validation')
-    chopped_audio_out_path=os.path.join('../data/chunked_audio_validation')
-    mel_specs_out_path=os.path.join('../data/mel_spectrograms_validation')
+    in_path=os.path.join('../data/jamendo/jamendo_techno_validation')
+    chopped_audio_out_path=os.path.join('../data/jamendo/jamendo_techno_chunked_audio_validation')
+    mel_specs_out_path=os.path.join('../data/jamendo/jamendo_techno_mel_spectrograms_validation')
 
     if len(sys.argv) > 1:
         in_path = sys.argv[1]
@@ -93,15 +94,28 @@ if __name__ == '__main__':
     if not os.path.exists(mel_specs_out_path):
         os.makedirs(mel_specs_out_path)
 
-    #loop over files in audio_folder_path
-    for i, file in enumerate(os.listdir(in_path)):
-        
-        #break if max samples reached
-        if i >= (MAX_SAMPLES):
-            break
+    print(f"Chopping {len(os.listdir(in_path))} audio files...")
 
-        chop_wav(i, os.path.join(in_path, file), chopped_audio_out_path, 5 * SAMPLE_RATE)
+
+    # only use multiprocessing if MAX_SAMPLES is None (i think breaking after MAX_SAMPLES is reached is not possible with multiprocessing)
+    if MAX_SAMPLES is None:
+        # create a list of arguments for using multiprocessing with the chop_wav function
+        args = [(i, os.path.join(in_path, file), chopped_audio_out_path, 5 * SAMPLE_RATE) for i, file in enumerate(os.listdir(in_path))]
+        # limit the list of arguments if max samples is reached
+        if MAX_SAMPLES is not None:
+            args = args[:MAX_SAMPLES]
+        #loop over files in audio_folder_path
+        with multiprocessing.Pool() as pool:
+            pool.starmap(chop_wav, tqdm(args))
+    else:
+        for i, file in tqdm(enumerate(os.listdir(in_path))):
+            chop_wav(i, os.path.join(in_path, file), chopped_audio_out_path, 5 * SAMPLE_RATE)
+
+    print("Number of chunked audio samples: ", len(os.listdir(chopped_audio_out_path)))
+    print("Generating mel spectrograms...")
 
     #generate mel spectrograms from chopped audio
-    for i, file in enumerate(os.listdir(chopped_audio_out_path)):
+    for i, file in tqdm(enumerate(os.listdir(chopped_audio_out_path))):
         transform_to_spectrogram(os.path.join(chopped_audio_out_path, file), out_path=mel_specs_out_path)
+
+    print("Number of mel spectrograms: ", len(os.listdir(mel_specs_out_path)))
