@@ -66,11 +66,12 @@ def train(model_output_path='output/models/'):
 
     model_filename = f'UNET_DIF_STEPS_{TIME_STEPS}_B_SIZE_{BATCH_SIZE}_LR_{LEARNING_RATE}_EPOCHS_{EPOCHS}_CONDITIONING_{WITH_CONDITIONING}'
     checkpoint_callback = ModelCheckpoint(
-        monitor='train_loss',
+        monitor='train_loss_validation',
         mode='min',
         dirpath=model_output_path,
         filename=model_filename,
-        save_top_k=3,
+        save_top_k=1,
+        save_last=True,
     )
 
     #initialize datasets
