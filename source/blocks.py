@@ -56,7 +56,7 @@ class SpectrogramDownscaler(nn.Module):
     
 
 #output block
-class output_latent(nn.Module):
+class output_layer(nn.Module):
     def __init__(self, in_c, out_c):
         super().__init__()
         self.conv1 = nn.Conv2d(in_c, 32, kernel_size=(3,8), stride=(1,1), padding=(1,0))

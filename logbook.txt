@@ -22,17 +22,19 @@ python3 scripts/main_cli.py preprocess --input_path ../data/chunked_audio --outp
 
 ENCODE:
 
-python3 scripts/main_cli.py encode --db_path ../data/jamendo_techno_chunked_audio --encoded_output_path ../data/jamendo_techno_encoded_audio --run runs/runs/jamendo_techno_16-10-2023_continued_2_fe77618ebd
+python3 scripts/main_cli.py encode --db_path ../data/jamendo/jamendo_techno_chunked_audio --encoded_output_path ../data/jamendo/jamendo_techno_encoded_audio --run runs/runs/jamendo_techno_16-10-2023_continued_2_fe77618ebd
+python3 scripts/main_cli.py encode --db_path ../data/jamendo/jamendo_techno_chunked_audio_validation --encoded_output_path ../data/jamendo/jamendo_techno_encoded_audio_validation --run runs/runs/jamendo_techno_16-10-2023_continued_2_fe77618ebd
+
 
 ENCODE WITH CUSTOM AUDIOFILES DATASET
 python3 scripts/main_cli.py encode --db_path ../data/jamendo/jamendo_techno_chunked_audio --encoded_output_path ../data/jamendo/jamendo_techno_encoded_audio --run runs/runs/jamendo_techno_16-10-2023_continued_2_fe77618ebd
 
 DECODE:
 
-python3 scripts/main_cli.py  decode --latents_path  ../data/encoded_audio_validation --decoded_output_path ../data/decoded_audio/rave_decoded_directly --run runs/runs/jamendo_techno_16-10-2023_continued_2_fe77618ebd
+python3 scripts/main_cli.py  decode --latents_path  ../data/jamendo/jamendo_techno_encoded_audio_validation --decoded_output_path ../data/decoded_audio/rave_decoded_directly --run runs/runs/jamendo_techno_16-10-2023_continued_2_fe77618ebd
 
 
-python3 scripts/main_cli.py  decode --latents_path  ../DiffWave-reimplementation/output/samples/new1 --decoded_output_path ../data/decoded_audio/ --run runs/rave_run_22_7_2023_fe77618ebd/
+python3 scripts/main_cli.py  decode --latents_path  ../DiffWave-reimplementation/output/samples/every_sample_step --decoded_output_path ../data/decoded_audio/ --run runs/runs/jamendo_techno_16-10-2023_continued_2_fe77618ebd
 
 
 

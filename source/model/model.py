@@ -10,7 +10,7 @@ from tqdm import tqdm
 import wandb
 from config import VARIANCE_SCHEDULE, TIME_STEPS, WITH_CONDITIONING, LEARNING_RATE, PRED_NOISE, NOISE_SCHEDULE_FUNC
 from model.unet import UNet
-from blocks import input_latent, input_spectrogram, output_latent, input_timestep
+from blocks import input_latent, input_spectrogram, output_layer, input_timestep
 import math
 
 class DenoisingModel(nn.Module):
@@ -23,7 +23,7 @@ class DenoisingModel(nn.Module):
             self.unet = UNet(64, 64)
         else:
             self.unet = UNet(32, 64)
-        self.output_latent = output_latent(64, 1)
+        self.output_latent = output_layer(64, 1)
 
     def forward(self, x, t, conditioning_var):
         t = self.input_timestep(t)
@@ -36,6 +36,10 @@ class DenoisingModel(nn.Module):
         else:
             x = self.unet(x,)
         x = self.output_latent(x)
+
+        #normalize to std 1 when predicting noise
+        if PRED_NOISE:
+            x = x / x.std(axis=(1,2,3), keepdims=True)
         return x
 
       #generate a sample from noise input

@@ -97,7 +97,7 @@ if __name__ == '__main__':
     print(f"Chopping {len(os.listdir(in_path))} audio files...")
 
 
-    # only use multiprocessing if MAX_SAMPLES is None (i think breaking after MAX_SAMPLES is reached is not possible with multiprocessing)
+    # only use multiprocessing if MAX_SAMPLES is None (i think breaking exactly after MAX_SAMPLES is reached is not possible with multiprocessing)
     if MAX_SAMPLES is None:
         # create a list of arguments for using multiprocessing with the chop_wav function
         args = [(i, os.path.join(in_path, file), chopped_audio_out_path, 5 * SAMPLE_RATE) for i, file in enumerate(os.listdir(in_path))]

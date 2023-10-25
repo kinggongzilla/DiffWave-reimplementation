@@ -11,11 +11,15 @@ from config import WITH_CONDITIONING, PRED_NOISE
 torch.manual_seed(42)
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 #default path to model used for sampling/inference
-checkpoint = "./output/models/2023-10-04_12-06-54/UNET_DIF_STEPS_1000_B_SIZE_128_LR_2e-05_EPOCHS_1000_CONDITIONING_True.ckpt" 
 
+#currently best diffusion model 23 oct 2023
+checkpoint = "./output/models/2023-10-23_19-36-10/UNET_DIF_STEPS_1000_B_SIZE_96_LR_2e-05_EPOCHS_350_CONDITIONING_True.ckpt" 
+
+#currently best oneshot model 23 oct 2023
+# checkpoint = "./output/models/2023-10-23_08-25-53/UNET_DIF_STEPS_2_B_SIZE_96_LR_2e-05_EPOCHS_350_CONDITIONING_True.ckpt"
 if WITH_CONDITIONING:
     #default to using first file in mel_spectrogram folder as conditioning variable
-    conditioner_file_name = os.listdir("../data/mel_spectrograms_validation/")[0]
+    conditioner_file_name = os.listdir("../data/jamendo/jamendo_techno_mel_spectrograms_validation/")[100]
 
 #get path to model, if given as argument
 if len(sys.argv) > 1:
@@ -37,7 +41,7 @@ model.eval()
 #load conditioning variable (spectrogram)
 conditioning_var=None
 if WITH_CONDITIONING:
-    conditioning_var = torch.from_numpy(np.load(os.path.join("../data/mel_spectrograms_unet/", conditioner_file_name)))
+    conditioning_var = torch.from_numpy(np.load(os.path.join("../data/jamendo/jamendo_techno_mel_spectrograms/", conditioner_file_name)))
     conditioning_var = torch.unsqueeze(conditioning_var[0:1, :, :], 0).to(device)
 
 #generate starting noise
@@ -47,7 +51,7 @@ noise = torch.randn(1, 1, 128, 109).to(device) # batch size x channel x flattene
 if PRED_NOISE:
     y = model.sample(noise, conditioning_var=conditioning_var if WITH_CONDITIONING else None).to(device)
 else:
-    y = model.sample_xt
+    y = model.sample_xt(noise, conditioning_var=conditioning_var if WITH_CONDITIONING else None).to(device)
 
 #save audio for each generated sample in batch
 for i in range(y.shape[0]):
