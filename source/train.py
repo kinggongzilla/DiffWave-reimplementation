@@ -8,7 +8,7 @@ from pytorch_lightning.callbacks import ModelCheckpoint
 import wandb
 from pytorch_lightning.loggers import WandbLogger
 from dataset import LatentsData
-from config import EPOCHS, BATCH_SIZE, LEARNING_RATE, TIME_STEPS, VARIANCE_SCHEDULE, SAMPLE_RATE, MAX_SAMPLES, WITH_CONDITIONING, PRED_NOISE
+from config import EPOCHS, BATCH_SIZE, LEARNING_RATE, TIME_STEPS, VARIANCE_SCHEDULE, SAMPLE_RATE, MAX_SAMPLES, WITH_CONDITIONING, PRED_NOISE, WITH_DROPOUT
 import datetime
 
 def train(model_output_path='output/models/'):
@@ -28,12 +28,16 @@ def train(model_output_path='output/models/'):
     print("Device: ", device)
 
     #default data location
-    data_path = os.path.join('../data/jamendo/jamendo_techno_encoded_audio/')
-    conditional_path = os.path.join('../data/jamendo/jamendo_techno_mel_spectrograms') if WITH_CONDITIONING else None
-    val_data_path = os.path.join('../data/jamendo/jamendo_techno_encoded_audio_validation/')
-    val_conditional_path = os.path.join('../data/jamendo/jamendo_techno_mel_spectrograms_validation') if WITH_CONDITIONING else None
+    # data_path = os.path.join('data/panda')
+    # conditional_path = None
+    # data_path = os.path.join('data/encoded_audio')
+    # conditional_path = os.path.join('data/mel_spectrograms')
+
+    data_path = os.path.join('../data/9ksamples/encoded_audio/')
+    conditional_path = os.path.join('../data/9ksamples/mel_spectrograms/') if WITH_CONDITIONING else None
+    val_data_path = os.path.join('../data/9ksamples/encoded_audio_validation/')
+    val_conditional_path = os.path.join('../data/9ksamples/mel_spectrograms_validation') if WITH_CONDITIONING else None
     model_checkpoint = None
-    # model_checkpoint = 'output/models/2023-10-23_diffusion_with_validation_full_jamendo_continued/last.ckpt'
 
     #example: python main.py path/to/data
     if len(sys.argv) > 1:
@@ -49,7 +53,6 @@ def train(model_output_path='output/models/'):
         entity="daavidhauser",
         name="BATCH_SIZE_" + str(BATCH_SIZE) + "_LEARNING_RATE_" + str(LEARNING_RATE) + "_TIME_STEPS_" + str(TIME_STEPS) +  "_VARIANCE_SCHEDULE_[" + str(VARIANCE_SCHEDULE[0])  + ", " + str(VARIANCE_SCHEDULE[-1]) + "]" + "_EPOCHS_" + str(EPOCHS),
         config = {
-        "pred_noise": PRED_NOISE,
         "learning_rate": LEARNING_RATE,
         "epochs": EPOCHS,
         "batch_size": BATCH_SIZE,
@@ -59,6 +62,7 @@ def train(model_output_path='output/models/'):
         "max_samples": MAX_SAMPLES,
         "with_conditional": WITH_CONDITIONING,
         "pred_noise": PRED_NOISE,
+        "with_dropout": WITH_DROPOUT,
         }
     )
 
@@ -81,7 +85,7 @@ def train(model_output_path='output/models/'):
         train_data,
         batch_size=BATCH_SIZE,
         # shuffle=True,
-        num_workers=24, 
+        num_workers=1, 
         )
      #initialize train dataloader
     validationloader = torch.utils.data.DataLoader(
@@ -91,14 +95,15 @@ def train(model_output_path='output/models/'):
         num_workers=24, 
         )
 
-
     #initialize model
     model = DenoisingModel()
     lit_model = LitModel(model)
 
     #train model
-    trainer = pl.Trainer(callbacks=[checkpoint_callback], max_epochs=EPOCHS, accelerator="auto", devices="auto", precision=16, logger=wandb_logger, check_val_every_n_epoch=1, val_check_interval=0.25)
-    trainer.fit(model=lit_model, train_dataloaders=trainloader, val_dataloaders=validationloader, ckpt_path=model_checkpoint)
+    trainer = pl.Trainer(callbacks=[checkpoint_callback], max_epochs=EPOCHS, accelerator="auto", devices="auto", precision=32, logger=wandb_logger)
+    trainer.fit(model=lit_model, train_dataloaders=trainloader, ckpt_path=model_checkpoint)
+    # trainer = pl.Trainer(callbacks=[checkpoint_callback], max_epochs=EPOCHS, accelerator="auto", devices="auto", precision=16, logger=wandb_logger, check_val_every_n_epoch=1, val_check_interval=0.25)
+    # trainer.fit(model=lit_model, train_dataloaders=trainloader, val_dataloaders=validationloader, ckpt_path=model_checkpoint)
     wandb.save(model_output_path + "/*")
 
 if __name__ == '__main__':

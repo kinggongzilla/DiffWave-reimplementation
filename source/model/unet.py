@@ -1,5 +1,6 @@
 import torch
 import torch.nn as nn
+from config import WITH_DROPOUT
 
 class conv_block(nn.Module):
   def __init__(self, in_c, out_c):
@@ -9,6 +10,8 @@ class conv_block(nn.Module):
     self.conv2 = nn.Conv2d(out_c, out_c, kernel_size=3, padding=1)
     self.bn2 = nn.BatchNorm2d(out_c)
     self.relu = nn.ReLU()
+    if WITH_DROPOUT:
+      self.dropout = nn.Dropout2d(0.3)
 
   def forward(self, inputs):
     x = self.conv1(inputs)
@@ -17,13 +20,17 @@ class conv_block(nn.Module):
     x = self.conv2(x)
     x = self.bn2(x)
     x = self.relu(x)
+    if WITH_DROPOUT:
+      x = self.dropout(x) # apply dropout after activation
     return x
+
   
 class encoder_block(nn.Module):
   def __init__(self, in_c, out_c):
     super().__init__()
     self.conv = conv_block(in_c, out_c)
     self.pool = nn.MaxPool2d((2, 2))
+
   def forward(self, inputs):
     x = self.conv(inputs)
     p = self.pool(x)
@@ -44,19 +51,19 @@ class UNet(nn.Module):
   def __init__(self, in_c=3, out_c=1):
     super().__init__()
     """ Encoder """
-    self.e1 = encoder_block(in_c, 64 * 1)
-    self.e2 = encoder_block(64 * 1, 128 * 1)
-    self.e3 = encoder_block(128 * 1, 256 * 1)
-    self.e4 = encoder_block(256 * 1, 512 * 1)
+    self.e1 = encoder_block(in_c, int(64 * 0.25))
+    self.e2 = encoder_block(int(64 * 0.25), int(128 * 0.25))
+    self.e3 = encoder_block(int(128 * 0.25), int(256 * 0.25))
+    self.e4 = encoder_block(int(256 * 0.25), int(512 * 0.25))
     """ Bottleneck """
-    self.b = conv_block(512 * 1, 1024 * 1)
+    self.b = conv_block(int(512 * 0.25), int(1024 * 0.25))
     """ Decoder """
-    self.d1 = decoder_block(1024 * 1, 512 * 1)
-    self.d2 = decoder_block(512 * 1, 256 * 1)
-    self.d3 = decoder_block(256 * 1, 128 * 1)
-    self.d4 = decoder_block(128 * 1, 64 * 1)
+    self.d1 = decoder_block(int(1024 * 0.25), int(512 * 0.25))
+    self.d2 = decoder_block(int(512 * 0.25), int(256 * 0.25))
+    self.d3 = decoder_block(int(256 * 0.25), int(128 * 0.25))
+    self.d4 = decoder_block(int(128 * 0.25), int(64 * 0.25))
     """ Classifier """
-    self.outputs = nn.Conv2d(64 * 1, out_c, kernel_size=1, padding=0)
+    self.outputs = nn.Conv2d(int(64 * 0.25), out_c, kernel_size=1, padding=0)
 
   def forward(self, inputs,):
     """ Encoder """

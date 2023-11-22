@@ -75,9 +75,8 @@ class output_layer(nn.Module):
         return x
     
 class input_timestep(torch.nn.Module):
-    def __init__(self, max_steps):
+    def __init__(self, ):
         super().__init__()
-        self.register_buffer('embedding', self._build_embedding(max_steps), persistent=False)
         self.projection1 = torch.nn.Linear(128, 128)
         self.silu1 = torch.nn.SiLU()
         self.projection2 = torch.nn.Linear(128, 128)
@@ -91,32 +90,20 @@ class input_timestep(torch.nn.Module):
         x = self.projection2(x)
         x = self.silu2(x)
         return x
-    
-    def _lerp_embedding(self, t):
-        low_idx = torch.floor(t).long()
-        high_idx = torch.ceil(t).long()
-        low = self.embedding[low_idx]
-        high = self.embedding[high_idx]
-        return low + (high - low) * (t - low_idx)
 
-    def _build_embedding(self, max_steps):
-        steps = torch.arange(max_steps).unsqueeze(1)  # [T,1]
-        dims = torch.arange(64).unsqueeze(0)          # [1,64]
-        table = steps * 10.0**(dims * 4.0 / 63.0)     # [T,64]
-        table = torch.cat([torch.sin(table), torch.cos(table)], dim=1)
-        return table
-    
     def create_timestep_embedding(self, t: float, dim: int):
-        assert 0 <= t <= 1, "Input t must be a floating point number between 0 and 1"
-
-        # Create a tensor of size `dim` for the timestep embedding
-        timestep_embedding_cos = torch.zeros(dim)
-        timestep_embedding_sin = torch.zeros(dim)
-        
-        # Fill the tensor with values derived from the input `t`
-        for i in range(dim):
-            timestep_embedding_cos[i] = t * math.cos(i / dim * math.pi * t * 2)
-            timestep_embedding_sin[i] = t * math.sin(i / dim * math.pi * (1-t) * 2)
-        
-        # Concatenate the tensors together and return
-        return (timestep_embedding_cos + timestep_embedding_sin).to('cuda')
+        embedding_min_frequency = 1.0
+        embedding_dims = 128
+        embedding_max_frequency = 1000.0
+        frequencies = torch.exp(
+            torch.linspace(
+                math.log(embedding_min_frequency),
+                math.log(embedding_max_frequency),
+                embedding_dims // 2,
+            )
+        ).to('cuda')
+        angular_speeds = 2.0 * math.pi * frequencies
+        embeddings = torch.cat(
+            [torch.sin(angular_speeds * t), torch.cos(angular_speeds * t)], 
+        )
+        return embeddings

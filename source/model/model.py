@@ -3,20 +3,28 @@ import numpy as np
 from pytorch_lightning.utilities.types import STEP_OUTPUT
 import torch
 import torch.nn as nn
-import torchaudio
 import torch.nn.functional as F
 import pytorch_lightning as pl
 from tqdm import tqdm
 import wandb
-from config import VARIANCE_SCHEDULE, TIME_STEPS, WITH_CONDITIONING, LEARNING_RATE, PRED_NOISE, NOISE_SCHEDULE_FUNC
+from config import VARIANCE_SCHEDULE, TIME_STEPS, WITH_CONDITIONING, LEARNING_RATE, PRED_NOISE, NOISE_SCHEDULE_FUNC, SCALE, TAU, SAMPLING_ALGORITHM
 from model.unet import UNet
 from blocks import input_latent, input_spectrogram, output_layer, input_timestep
 import math
+from utils import negOneToOneNorm
+
+
+if NOISE_SCHEDULE_FUNC == 'linear':
+    gamma = lambda t: simple_linear_schedule(t.item())
+elif NOISE_SCHEDULE_FUNC == 'exp':
+    gamma = lambda t: exponential_schedule(t.item(), tau=TAU)
+elif NOISE_SCHEDULE_FUNC == 'cos':
+    gamma = lambda t: cosine_schedule(t.item(), tau=TAU)
 
 class DenoisingModel(nn.Module):
     def __init__(self):
         super().__init__()
-        self.input_timestep = input_timestep(TIME_STEPS)
+        self.input_timestep = input_timestep()
         self.input_latent = input_latent(1, 32)
         if WITH_CONDITIONING:
             self.input_spectrogram = input_spectrogram(1, 32)
@@ -37,43 +45,63 @@ class DenoisingModel(nn.Module):
             x = self.unet(x,)
         x = self.output_latent(x)
 
-        #normalize to std 1 when predicting noise
-        if PRED_NOISE:
-            x = x / x.std(axis=(1,2,3), keepdims=True)
         return x
 
       #generate a sample from noise input
-    def sample(self, x_t, conditioning_var=None):
+    def sample(self, x_t, target_sample_for_comparison, conditioning_var=None):
 
-        if NOISE_SCHEDULE_FUNC == 'linear':
-            gamma = lambda t: simple_linear_schedule(t.item())
-        elif NOISE_SCHEDULE_FUNC == 'exp':
-            gamma = lambda t: exponential_schedule(t.item(), tau=0.2)
-        elif NOISE_SCHEDULE_FUNC == 'cos':
-            gamma = lambda t: cosine_schedule(t.item(),)
+        #TODO: delete later; for testing: instead of noise pass a noisy panda and see if network can denoise
+        # noise_test = torch.randn(1, 1, 128, 109).to('cuda') # batch size x channel x flattened latent size
+        # pandas = torch.tensor(np.load("data/panda/pandas.npy")).to('cuda')
+        # pandas = pandas / pandas.std()
+        # pandas = negOneToOneNorm(pandas)
+        # x_t = torch.sqrt(gamma(torch.tensor(0.01))) * SCALE * pandas + torch.sqrt(1-gamma(torch.tensor(0.99))) * noise_test
 
+
+
+        x_t_next = x_t
+        start_noise  = x_t
         with torch.no_grad():
-            previous_noise = x_t
-
             #code below actually performs the sampling
             for n in tqdm(range(TIME_STEPS)):
-                t_now = torch.tensor(min(1 - n / TIME_STEPS, 0.999)).to(x_t.device)
-                t_next = torch.tensor(max(1 - (n+1) / TIME_STEPS, 0.0001)).to(x_t.device)
+                x_t = x_t_next
 
-                x_t = x_t / x_t.std(axis=(1,2,3), keepdims=True) if True else x_t
+                # t_now = torch.tensor(min(1 - n / TIME_STEPS, 0.999)).to(x_t.device)
+                # t_next = torch.tensor(max(1 - (n+1) / TIME_STEPS, 0.001)).to(x_t.device)
+                t_now = torch.tensor(min(1 - n / TIME_STEPS, 0.98)).to(x_t.device)
+                t_next = torch.tensor(max(t_now - torch.tensor(1 / TIME_STEPS).to(x_t.device), 0.002)).to(x_t.device)
+
+                signal_rate_now = gamma(t_now)
+                signal_rate_next = gamma(t_next)
+                noise_rate_now = 1 - signal_rate_now
+                noise_rate_next = 1 - signal_rate_next
+
                 noise_pred = self.forward(x_t, t_now, conditioning_var).squeeze(1)
-                x_t = (x_t - torch.sqrt(1-gamma(t_now)) * noise_pred) / torch.sqrt(gamma(t_now))
-                np.save("output/samples/samples_minus_noise/samples_minus_noise_" + str(n), np.clip(x_t.squeeze(0).squeeze(0).cpu().numpy(), -1.0, 1.0))
-
+                pred_x_0 = (x_t - torch.sqrt(noise_rate_now) * noise_pred) / (torch.sqrt(signal_rate_now) * SCALE)
+                
                 if n < TIME_STEPS - 1:
                     if n % 10 == 0:
-                        print("t_now: ", t_now)
-                        print(f"difference to added noise at step: {n}: ", F.l1_loss(noise_pred, previous_noise))
-                    x_t = torch.sqrt(gamma(t_next)) * x_t + torch.sqrt(1 - gamma(t_next)) * noise_pred
-                np.save("output/samples/every_sample_step/every_sample_step_" + str(n), np.clip(x_t.squeeze(0).squeeze(0).cpu().numpy(), -1.0, 1.0))
+                        #print mse loss pred_x_0 and pandas
+                        print(f"mse loss pred_x_0 and target sample at step: {n}: ", F.mse_loss(pred_x_0.squeeze(0).squeeze(0), target_sample_for_comparison))
 
-            x_t = torch.clamp(x_t, -1.0, 1.0)
-        return x_t.squeeze(1)
+                        #print signal rates
+                        print("signal_rate_now: ", signal_rate_now)
+                        print("signal_rate_next: ", signal_rate_next)
+                        print(f"MSE between noise and pred at timestep t: {n}: ", F.mse_loss(noise_pred, start_noise))
+                    np.save("output/samples/every_sample_step/every_sample_step_" + str(n), pred_x_0.squeeze(0).squeeze(0).cpu().numpy().clip(-1, 1), -1.0, 1.0)
+                    noise = torch.randn(x_t.shape).to(x_t.device)
+                    if SAMPLING_ALGORITHM == 'DDIM':
+                        eta = 1
+                        c1 = eta * ((1 - signal_rate_now / signal_rate_next) * (1 - signal_rate_next) / (1 - signal_rate_now)).sqrt()
+                        c2 = torch.sqrt((noise_rate_next - c1 ** 2))
+                        x_t_next = torch.sqrt(signal_rate_next) * SCALE * pred_x_0 + c2 * noise_pred + c1 * noise
+                    else:
+                        x_t_next = torch.sqrt(signal_rate_next) * SCALE * pred_x_0 + torch.sqrt(noise_rate_next) * noise
+
+
+        #clip to -1, 1
+        # x_t = torch.clamp(x_t, -1.0, 1.0)
+        return pred_x_0.squeeze(1)
     
     #generate a sample from noise input
     def sample_xt(self, x_t, conditioning_var=None):
@@ -94,8 +122,6 @@ class LitModel(pl.LightningModule):
     def training_step(self, batch, batch_idx):
 
         device = self.device
-        scale = 1 #TODO: adjust later?
-
         if WITH_CONDITIONING:
             x_0 = batch[0] # batch size, channels, length 
         else:
@@ -105,21 +131,16 @@ class LitModel(pl.LightningModule):
 
         conditioning_var = None
         if WITH_CONDITIONING:
-            conditioning_var = batch[1] 
+            conditioning_var = batch[1]
 
         if PRED_NOISE:
-            #generate random integer between 1 and number of diffusion timesteps
             t = torch.rand(1).to(device)
-            if NOISE_SCHEDULE_FUNC == 'linear':
-                gamma = lambda t: simple_linear_schedule(t.item())
-            elif NOISE_SCHEDULE_FUNC == 'exp':
-                gamma = lambda t: exponential_schedule(t.item(), tau=0.2)
-            elif NOISE_SCHEDULE_FUNC == 'cos':
-                gamma = lambda t: cosine_schedule(t.item(),)
-            x_t = torch.sqrt(gamma(t)) * scale * x_0 + torch.sqrt(1-gamma(t)) * noise
-            x_t = x_t / x_t.std(dim=(1,2,3), keepdim=True)
-            y_pred = self.model.forward(x_t, t, conditioning_var)
-            batch_loss = F.l1_loss(y_pred, noise)
+            signal_rate = gamma(t)
+            noise_rate = 1 - signal_rate
+            x_t = torch.sqrt(signal_rate) * SCALE * x_0 + torch.sqrt(noise_rate) * noise
+            y_pred = self.model.forward(x_t, gamma(t), conditioning_var)
+            # batch_loss = F.l1_loss(y_pred, noise)
+            batch_loss = F.mse_loss(y_pred, noise)
 
             #LOG LOSS PER DIFFUSION STEP
             bins = np.arange(0, 1.1, 0.1)
@@ -142,8 +163,6 @@ class LitModel(pl.LightningModule):
     
     def validation_step(self, batch, batch_idx):
         device = self.device
-        scale = 1 #TODO: adjust later?
-
 
         if WITH_CONDITIONING:
             x_0 = batch[0] # batch size, channels, length 
@@ -159,14 +178,7 @@ class LitModel(pl.LightningModule):
         if PRED_NOISE:
             #generate random integer between 1 and number of diffusion timesteps
             t = torch.rand(1).to(device)
-            if NOISE_SCHEDULE_FUNC == 'linear':
-                gamma = lambda t: simple_linear_schedule(t.item())
-            elif NOISE_SCHEDULE_FUNC == 'exp':
-                gamma = lambda t: exponential_schedule(t.item(), tau=0.2)
-            elif NOISE_SCHEDULE_FUNC == 'cos':
-                gamma = lambda t: cosine_schedule(t.item(),)
-            x_t = torch.sqrt(gamma(t)) * scale * x_0 + torch.sqrt(1-gamma(t)) * noise
-            x_t = x_t / x_t.std(dim=(1,2,3), keepdim=True)
+            x_t = torch.sqrt(gamma(t)) * SCALE * x_0 + torch.sqrt(1-gamma(t)) * noise
             y_pred = self.model.forward(x_t, t, conditioning_var)
             batch_loss = F.l1_loss(y_pred, noise)
         else:
@@ -184,23 +196,22 @@ class LitModel(pl.LightningModule):
         return [optimizer], []
     
 
-def simple_linear_schedule(t, clip_min=1e-9):
+def simple_linear_schedule(t, clip_min=0.000001):
     # A gamma function that simply is 1-t.
-    return torch.tensor(np.clip(1 - t, clip_min, 1.))
+    return torch.tensor(np.clip(1 - t, clip_min, 0.9999))
 
-
-def cosine_schedule(t, start=0, end=1, tau=1, clip_min=1e-9):
+def cosine_schedule(t, start=0, end=1, tau=1, clip_min=0.000001):
     # A gamma function based on cosine function.
     v_start = math.cos(start * math.pi / 2) ** (2 * tau)
     v_end = math.cos(end * math.pi / 2) ** (2 * tau)
     output = math.cos((t * (end - start) + start) * math.pi / 2) ** (2 * tau)
     output = (v_end - output) / (v_end - v_start)
-    return torch.tensor(np.clip(output, clip_min, 1.))
+    return torch.tensor(np.clip(output, clip_min, 0.9999))
 
-def exponential_schedule(t, start=0, end=1, tau=1, clip_min=1e-9):
+def exponential_schedule(t, start=0, end=1, tau=1, clip_min=0.000001):
     # A gamma function based on exponential function.
     v_start = math.exp(-start * tau)
     v_end = math.exp(-end * tau)
     output = math.exp(-t * tau)
     output = (v_end - output) / (v_end - v_start)
-    return torch.tensor(np.clip(output, clip_min, 1.))
+    return torch.tensor(np.clip(output, clip_min, 0.9999))
