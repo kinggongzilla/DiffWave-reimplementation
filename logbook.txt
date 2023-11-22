@@ -8,15 +8,14 @@ tensorboard --logdir=runs
 
 TRAIN: 
 
-rave train --config v2 --db_path ../data/rave_preprocessed --name rave_run_4_8_2023 —ckpt runs/rave_run_22_7_2023_fe77618ebd/version_3/checkpoints/last.ckpt
 
-rave train --config v2 --db_path ../data/rave_preprocessed_jamendo_techno/jamendo_techno_train --name runs/jamendo_techno_16-10-2023_continued_2 -ckpt runs/runs/jamendo_techno_16-10-2023_continued_2_fe77618ebd/version_0/checkpoints/last.ckpt
+rave train --config v2 --db_path ../rave-latent-diffusion/RAVE-Latent-Diffusion/data/rave_preprocessed --name full_length_jamendo_techno -ckpt runs/runs/jamendo_techno_16-10-2023_continued_2_fe77618ebd/version_0/checkpoints/last.ckpt
 
 
 
 PREPROCESS: (note preprocessing is actually not necessary in my setup)
 
-python3 scripts/main_cli.py preprocess --input_path ../data/chunked_audio --output_path ../data/rave_preprocessed
+python3 scripts/main_cli.py preprocess --input_path ../data/jamendo/jamendo_techno --output_path ../data/rave_preprocessed
 
 
 
@@ -34,7 +33,7 @@ DECODE:
 python3 scripts/main_cli.py  decode --latents_path  ../data/jamendo/jamendo_techno_encoded_audio_validation --decoded_output_path ../data/decoded_audio/rave_decoded_directly --run runs/runs/jamendo_techno_16-10-2023_continued_2_fe77618ebd
 
 
-python3 scripts/main_cli.py  decode --latents_path  ../DiffWave-reimplementation/output/samples/every_sample_step --decoded_output_path ../data/decoded_audio/ --run runs/runs/jamendo_techno_16-10-2023_continued_2_fe77618ebd
+python3 scripts/main_cli.py  decode --latents_path  ../DiffWave-reimplementation/output/samples/test_22nov --decoded_output_path ../data/decoded_audio/ --run runs/runs/jamendo_techno_16-10-2023_continued_2_fe77618ebd
 
 
 
@@ -394,3 +393,16 @@ Next steps:
 Validation Loss loggen
 Mehr diffusion schritte?!
 
+
+17. Nov
+
+note that if noise schedule is too strong/aggressive, loss can get very low because network 
+just predicts the whole input it gets. 
+But it is not actually learning the sample and able to generate anything
+--> I think this is when sampling can get unstable with exploding x_t
+
+
+21 Nov
+When passing a very noisy panda e.g. sqrt(gamma(0.05)) * panda + sqrt(gamma(0.95)), then it reproduces the panda with diffusion
+the less noisy the panda is the better the reproduction. In this case only the last 95% of steps were done.
+It seems like the network struggles to go from full noisy to a very noisy sample. But as soon as it has a very noisy sample it can denoise the sample. 
