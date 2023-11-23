@@ -17,12 +17,14 @@ device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 #currently best oneshot model 23 oct 2023
 # checkpoint = "./output/models/2023-10-23_08-25-53/UNET_DIF_STEPS_2_B_SIZE_96_LR_2e-05_EPOCHS_350_CONDITIONING_True.ckpt"
 
-checkpoint = "output/models/2023-11-22_08-24-28/last.ckpt"
+checkpoint = "output/models/5_diffsteps/last.ckpt"
 
 if WITH_CONDITIONING:
     #default to using first file in mel_spectrogram folder as conditioning variable
     conditioning_var_path = "../data/jamendo/jamendo_techno_mel_spectrograms/" + sorted(os.listdir("../data/jamendo/jamendo_techno_mel_spectrograms/"))[0]
-    target_sample_for_comparison = "../data/jamendo/jamendo_techno_encoded_audio/" + sorted(os.listdir("../data/jamendo/jamendo_techno_encoded_audio/"))[0]
+    target_sample_for_comparison_path = "../data/jamendo/jamendo_techno_encoded_audio/" + sorted(os.listdir("../data/jamendo/jamendo_techno_encoded_audio/"))[0]
+    target_sample_for_comparison = negOneToOneNorm(torch.tensor(np.load(target_sample_for_comparison_path)).to(device))
+
 
 #get path to model, if given as argument
 if len(sys.argv) > 1:
@@ -49,17 +51,17 @@ if WITH_CONDITIONING:
 
 #generate starting noise
 noise = torch.randn(1, 1, 128, 109).to(device) # batch size x channel x flattened latent size
-
 #get denoised sample
 if PRED_NOISE:
     y = model.sample(noise, target_sample_for_comparison if WITH_CONDITIONING else None, conditioning_var=conditioning_var if WITH_CONDITIONING else None).to(device)
 else:
-    y = model.sample_xt(noise, conditioning_var=conditioning_var if WITH_CONDITIONING else None).to(device)
+    y = model.sample_xt(noise, target_sample_for_comparison if WITH_CONDITIONING else None, conditioning_var=conditioning_var if WITH_CONDITIONING else None).to(device)
 
 #save audio for each generated sample in batch
 for i in range(y.shape[0]):
     random_int = np.random.randint(0, 1000000)
     path = os.path.join("output/samples", f"sample{random_int}")
     output = y[i].squeeze(0)
+    output = output / output.std()
     np.save(path, output.to('cpu'))
     print('Saved sample to', path)

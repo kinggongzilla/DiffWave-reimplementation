@@ -406,3 +406,8 @@ But it is not actually learning the sample and able to generate anything
 When passing a very noisy panda e.g. sqrt(gamma(0.05)) * panda + sqrt(gamma(0.95)), then it reproduces the panda with diffusion
 the less noisy the panda is the better the reproduction. In this case only the last 95% of steps were done.
 It seems like the network struggles to go from full noisy to a very noisy sample. But as soon as it has a very noisy sample it can denoise the sample. 
+
+
+23. Nov
+The fewer fixed diffusions steps i train on the lower the noise is. For 100, 50, 25 diffusion steps its almost the same.
+For 10, 5, and 1 diffusion steps loss gets much lower for each different amount

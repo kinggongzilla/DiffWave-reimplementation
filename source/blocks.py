@@ -81,15 +81,22 @@ class input_timestep(torch.nn.Module):
         self.silu1 = torch.nn.SiLU()
         self.projection2 = torch.nn.Linear(128, 128)
         self.silu2 = torch.nn.SiLU()
+        self.upsample = torch.nn.Upsample(size=(128, 128), mode='nearest')
 
     #project diffusion timestep into latent space
     def forward(self, t):
-        x = self.create_timestep_embedding(t, 128)
-        x = self.projection1(x)
-        x = self.silu1(x)
-        x = self.projection2(x)
-        x = self.silu2(x)
-        return x
+        #apply create_time_step_embedding to t for every sample in batch
+        embeddings = torch.zeros((t.shape[0], 128)).to('cuda')
+        for i in range(t.shape[0]):
+            embeddings[i] = self.create_timestep_embedding(t[i], 128)
+        embeddings = self.projection1(embeddings)
+        embeddings = self.silu1(embeddings)
+        embeddings = self.projection2(embeddings)
+        embeddings = self.silu2(embeddings)
+        embeddings = torch.unsqueeze(embeddings, 1)
+        embeddings = torch.unsqueeze(embeddings, 1)
+        embeddings = self.upsample(embeddings)
+        return embeddings
 
     def create_timestep_embedding(self, t: float, dim: int):
         embedding_min_frequency = 1.0
