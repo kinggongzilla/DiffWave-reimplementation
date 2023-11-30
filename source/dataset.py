@@ -26,10 +26,10 @@ class LatentsData(Dataset):
         x = latent / self.total_std
         x = negOneToOneNorm(x)
         if not WITH_CONDITIONING:
-            return x.unsqueeze(0)
+            return x.flatten().unsqueeze(0)
         spectrogram = torch.from_numpy(np.load(os.path.join(self.conditional_dir, self.spec_files[index])))[0:1,:,:] #get single channel spectrogram from spectrogram with two channels; slicing [0:1] to preserve dimensions
 
-        return x.unsqueeze(0), spectrogram
+        return x.flatten().unsqueeze(0), spectrogram
     
     def calculate_dataset_mean_and_std(self):
         total_std = 0

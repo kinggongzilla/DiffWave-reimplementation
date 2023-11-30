@@ -17,7 +17,7 @@ device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 #currently best oneshot model 23 oct 2023
 # checkpoint = "./output/models/2023-10-23_08-25-53/UNET_DIF_STEPS_2_B_SIZE_96_LR_2e-05_EPOCHS_350_CONDITIONING_True.ckpt"
 
-checkpoint = "output/models/5_diffsteps/last.ckpt"
+checkpoint = "output/models/2023-11-23_22-27-10/last.ckpt"
 
 if WITH_CONDITIONING:
     #default to using first file in mel_spectrogram folder as conditioning variable
@@ -50,18 +50,24 @@ if WITH_CONDITIONING:
     conditioning_var = torch.unsqueeze(conditioning_var[0:1, :, :], 0).to(device)
 
 #generate starting noise
-noise = torch.randn(1, 1, 128, 109).to(device) # batch size x channel x flattened latent size
+noise = torch.randn(1, 1, 13952).to(device) # batch size x channel x flattened latent size
 #get denoised sample
 if PRED_NOISE:
-    y = model.sample(noise, target_sample_for_comparison if WITH_CONDITIONING else None, conditioning_var=conditioning_var if WITH_CONDITIONING else None).to(device)
+    y = model.sample(noise, target_sample_for_comparison.flatten() if WITH_CONDITIONING else None, conditioning_var=conditioning_var if WITH_CONDITIONING else None).to(device)
 else:
-    y = model.sample_xt(noise, target_sample_for_comparison if WITH_CONDITIONING else None, conditioning_var=conditioning_var if WITH_CONDITIONING else None).to(device)
+    y = model.sample_xt(noise, target_sample_for_comparison.flatten() if WITH_CONDITIONING else None, conditioning_var=conditioning_var if WITH_CONDITIONING else None).to(device)
 
 #save audio for each generated sample in batch
 for i in range(y.shape[0]):
     random_int = np.random.randint(0, 1000000)
     path = os.path.join("output/samples", f"sample{random_int}")
-    output = y[i].squeeze(0)
-    output = output / output.std()
-    np.save(path, output.to('cpu'))
+    y = y[i].squeeze(0).reshape(128, 109).detach().cpu()
+
+    #left and right side of sample are inverted due to weird reason (maybe flattening and reshaping)
+    corrected_sample = np.zeros_like((y))
+    corrected_sample[:, -52:] = y[:, :52]
+    corrected_sample[:, :57] = y[:, -57:]
+
+    corrected_sample = corrected_sample / corrected_sample.std()
+    np.save(path, corrected_sample)
     print('Saved sample to', path)

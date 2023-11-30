@@ -85,7 +85,7 @@ def train(model_output_path='output/models/'):
         train_data,
         batch_size=BATCH_SIZE,
         # shuffle=True,
-        num_workers=1, 
+        num_workers=24, 
         )
      #initialize train dataloader
     validationloader = torch.utils.data.DataLoader(
@@ -100,8 +100,6 @@ def train(model_output_path='output/models/'):
     lit_model = LitModel(model)
 
     #train model
-    # trainer = pl.Trainer(callbacks=[checkpoint_callback], max_epochs=EPOCHS, accelerator="auto", devices="auto", precision=32, logger=wandb_logger)
-    # trainer.fit(model=lit_model, train_dataloaders=trainloader, ckpt_path=model_checkpoint)
     trainer = pl.Trainer(callbacks=[checkpoint_callback], max_epochs=EPOCHS, accelerator="auto", devices="auto", precision=16, logger=wandb_logger, check_val_every_n_epoch=1, val_check_interval=0.25)
     # trainer.fit(model=lit_model, train_dataloaders=trainloader, val_dataloaders=validationloader, ckpt_path=model_checkpoint)
     trainer.fit(model=lit_model, train_dataloaders=trainloader, ckpt_path=model_checkpoint)
