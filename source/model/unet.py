@@ -51,19 +51,19 @@ class UNet(nn.Module):
   def __init__(self, in_c=3, out_c=1):
     super().__init__()
     """ Encoder """
-    self.e1 = encoder_block(in_c, int(64 * 2))
-    self.e2 = encoder_block(int(64 * 2), int(128 * 2))
-    self.e3 = encoder_block(int(128 * 2), int(256 * 2))
-    self.e4 = encoder_block(int(256 * 2), int(512 * 2))
+    self.e1 = encoder_block(in_c, int(64 * 0.25))
+    self.e2 = encoder_block(int(64 * 0.25), int(128 * 0.25))
+    self.e3 = encoder_block(int(128 * 0.25), int(256 * 0.25))
+    self.e4 = encoder_block(int(256 * 0.25), int(512 * 0.25))
     """ Bottleneck """
-    self.b = conv_block(int(512 * 2), int(1024 * 2))
+    self.b = conv_block(int(512 * 0.25), int(1024 * 0.25))
     """ Decoder """
-    self.d1 = decoder_block(int(1024 * 2), int(512 * 2))
-    self.d2 = decoder_block(int(512 * 2), int(256 * 2))
-    self.d3 = decoder_block(int(256 * 2), int(128 * 2))
-    self.d4 = decoder_block(int(128 * 2), int(64 * 2))
+    self.d1 = decoder_block(int(1024 * 0.25), int(512 * 0.25))
+    self.d2 = decoder_block(int(512 * 0.25), int(256 * 0.25))
+    self.d3 = decoder_block(int(256 * 0.25), int(128 * 0.25))
+    self.d4 = decoder_block(int(128 * 0.25), int(64 * 0.25))
     """ Classifier """
-    self.outputs = nn.Conv2d(int(64 * 2), out_c, kernel_size=1, padding=0)
+    self.outputs = nn.Conv2d(int(64 * 0.25), out_c, kernel_size=1, padding=0)
 
   def forward(self, inputs,):
     """ Encoder """

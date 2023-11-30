@@ -17,7 +17,7 @@ device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 #currently best oneshot model 23 oct 2023
 # checkpoint = "./output/models/2023-10-23_08-25-53/UNET_DIF_STEPS_2_B_SIZE_96_LR_2e-05_EPOCHS_350_CONDITIONING_True.ckpt"
 
-checkpoint = "output/models/5_diffsteps/last.ckpt"
+checkpoint = "output/models/2023-11-30_22-44-19/last.ckpt"
 
 if WITH_CONDITIONING:
     #default to using first file in mel_spectrogram folder as conditioning variable

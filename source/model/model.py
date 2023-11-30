@@ -65,15 +65,20 @@ class DenoisingModel(nn.Module):
             for n in tqdm(range(TIME_STEPS)):
                 x_t = x_t_next
 
-                # t_now = torch.tensor(min(1 - n / TIME_STEPS, 0.999)).to(x_t.device)
-                # t_next = torch.tensor(max(1 - (n+1) / TIME_STEPS, 0.001)).to(x_t.device)
-                t_now = torch.tensor(min(1 - n / TIME_STEPS, 0.98)).to(x_t.device)
-                t_next = torch.tensor(max(t_now - torch.tensor(1 / TIME_STEPS).to(x_t.device), 0.002)).to(x_t.device)
+                t_now = torch.min(torch.tensor(1 - n / TIME_STEPS), torch.tensor(0.98)).to(x_t.device).unsqueeze(0)
+                t_next = torch.max(torch.tensor(t_now - torch.tensor(1 / TIME_STEPS)), torch.tensor(0.002)).to(x_t.device)
 
-                signal_rate_now = gamma(t_now)
-                signal_rate_next = gamma(t_next)
-                noise_rate_now = 1 - signal_rate_now
-                noise_rate_next = 1 - signal_rate_next
+
+                signal_rate_now = torch.empty_like(t_now).to(x_t.device)
+                for i in range(t_now.shape[0]):
+                    signal_rate_now[i] = gamma(t_now[i])
+
+                signal_rate_next = torch.empty_like(t_next).to(x_t.device)
+                for i in range(t_next.shape[0]):
+                    signal_rate_next[i] = gamma(t_next[i])
+
+                noise_rate_now = torch.ones_like(signal_rate_now) - signal_rate_now
+                noise_rate_next = torch.ones_like(signal_rate_next) - signal_rate_next
 
                 noise_pred = self.forward(x_t, signal_rate_now, conditioning_var).squeeze(1)
                 pred_x_0 = (x_t - torch.sqrt(noise_rate_now) * noise_pred) / (torch.sqrt(signal_rate_now) * SCALE)
@@ -111,13 +116,19 @@ class DenoisingModel(nn.Module):
             #sample t-1 sample directly, do not predict noise
             for n in tqdm(range(TIME_STEPS)):
                 x_t = x_t_next
-                t_now = torch.tensor(min(1 - n / TIME_STEPS, 0.98)).to(x_t.device)
-                t_next = torch.tensor(max(t_now - torch.tensor(1 / TIME_STEPS).to(x_t.device), 0.002)).to(x_t.device)
+                t_now = torch.min(torch.tensor(1 - n / TIME_STEPS), torch.tensor(0.98)).to(x_t.device).unsqueeze(0)
+                t_next = torch.max(torch.tensor(t_now - torch.tensor(1 / TIME_STEPS)), torch.tensor(0.002)).to(x_t.device)
 
-                signal_rate_now = gamma(t_now)
-                signal_rate_next = gamma(t_next)
-                noise_rate_now = 1 - signal_rate_now
-                noise_rate_next = 1 - signal_rate_next
+                signal_rate_now = torch.empty_like(t_now).to(x_t.device)
+                for i in range(t_now.shape[0]):
+                    signal_rate_now[i] = gamma(t_now[i])
+
+                signal_rate_next = torch.empty_like(t_next).to(x_t.device)
+                for i in range(t_next.shape[0]):
+                    signal_rate_next[i] = gamma(t_next[i])
+
+                noise_rate_now = torch.ones_like(signal_rate_now) - signal_rate_now
+                noise_rate_next = torch.ones_like(signal_rate_next) - signal_rate_next
                 pred_x_0 = self.forward(x_t, signal_rate_now, conditioning_var)
                 np.save("output/samples/every_sample_step/every_sample_step_" + str(n), x_t.squeeze(0).squeeze(0).cpu().numpy())
                 if n % 10 == 0:

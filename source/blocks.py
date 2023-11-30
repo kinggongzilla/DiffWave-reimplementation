@@ -63,15 +63,17 @@ class output_layer(nn.Module):
         self.conv2 = nn.Conv2d(32, 32, kernel_size=(3,3), stride=(1,1), padding=(1,1))
         self.conv3 = nn.Conv2d(32, 16, kernel_size=(3,7), stride=(1,1), padding=(1,0))
         self.conv4 = nn.Conv2d(16, out_c, kernel_size=(3,7), stride=(1,1), padding=(1,0))
-        self.tanh = nn.Tanh()
+        self.selu = nn.SELU()
     def forward(self, inputs):
         x = self.conv1(inputs)
-        x = self.tanh(x)
+        x = self.selu(x)
         x = self.conv2(x)
-        x = self.tanh(x)
+        x = self.selu(x)
         x = self.conv3(x)
-        x = self.tanh(x)
+        x = self.selu(x)
         x = self.conv4(x)
+        x = self.selu(x)
+        # x = 4 * self.tanh(x)
         return x
     
 class input_timestep(torch.nn.Module):
