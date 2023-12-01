@@ -49,11 +49,20 @@ class DenoisingModel(nn.Module):
             #code below actually performs the sampling
             for n in tqdm(reversed(range(TIME_STEPS))):
                 x_t = x_t_next
-                t_now = torch.tensor(n).to(x_t.device)
+                t_now = torch.tensor(n).to(x_t.device).unsqueeze(0)
                 t_next = t_now - 1
 
-                signal_rate_now = gamma(t_now / TIME_STEPS)
+                signal_rate_now = torch.zeros_like(t_now).float()
+                for i in range(t_now.shape[0]):
+                    signal_rate_now[i] = gamma(t_now[i] / TIME_STEPS).item()
+                signal_rate_now = signal_rate_now.unsqueeze(1).unsqueeze(1)
                 noise_rate_now = 1 - signal_rate_now
+
+                signal_rate_next = torch.zeros_like(t_next).float()
+                for i in range(t_next.shape[0]):
+                    signal_rate_next[i] = gamma(t_next[i] / TIME_STEPS).item()
+                signal_rate_next = signal_rate_next.unsqueeze(1).unsqueeze(1)
+                noise_rate_next = 1 - signal_rate_next
 
                 noise_pred = self.forward(x_t, t_now, conditioning_var)
                 pred_x_0 = (x_t - torch.sqrt(noise_rate_now) * noise_pred) / (torch.sqrt(signal_rate_now) * SCALE)
@@ -93,17 +102,25 @@ class DenoisingModel(nn.Module):
             #sample t-1 sample directly, do not predict noise
             for n in tqdm(reversed(range(TIME_STEPS))):
                 x_t = x_t_next
-                t_now = torch.tensor(n).to(x_t.device)
+                t_now = torch.tensor(n).unsqueeze(0).to(x_t.device)
                 t_next = t_now - 1
 
-                signal_rate_now = gamma(t_now / TIME_STEPS)
-                signal_rate_next = gamma(t_next / TIME_STEPS)
+                signal_rate_now = torch.zeros_like(t_now).float()
+                for i in range(t_now.shape[0]):
+                    signal_rate_now[i] = gamma(t_now[i] / TIME_STEPS).item()
+                signal_rate_now = signal_rate_now.unsqueeze(1).unsqueeze(1)
+                noise_rate_now = 1 - signal_rate_now
+
+                signal_rate_next = torch.zeros_like(t_next).float()
+                for i in range(t_next.shape[0]):
+                    signal_rate_next[i] = gamma(t_next[i] / TIME_STEPS).item()
+                signal_rate_next = signal_rate_next.unsqueeze(1).unsqueeze(1)
+                noise_rate_next = 1 - signal_rate_next
+
                 pred_x_0 = self.forward(x_t, t_now, conditioning_var)
                 np.save("output/samples/every_sample_step/every_sample_step_" + str(n), x_t.squeeze(0).squeeze(0).reshape(128, 109).cpu().numpy())
 
                 if n > 0:
-                    noise_rate_now = 1 - signal_rate_now
-                    noise_rate_next = 1 - signal_rate_next
                     noise = torch.randn(x_t.shape).to(x_t.device)
                     x_t_next = torch.sqrt(signal_rate_next) * SCALE * pred_x_0 + torch.sqrt(noise_rate_next) * noise
 
@@ -133,6 +150,11 @@ class LitModel(pl.LightningModule):
         signal_rate = signal_rate.unsqueeze(1).unsqueeze(1)
         noise_rate = 1 - signal_rate
         x_t = torch.sqrt(signal_rate) * SCALE * x_0 + torch.sqrt(noise_rate) * noise
+
+        #TODO:maybe remove later
+        #normalize to zero mean and unit variance
+        # x_t = (x_t - x_t.mean()) / x_t.std()
+        # x_t = negOneToOneNorm(x_t)
 
         y_pred = self.model.forward(x_t, t, conditioning_var)
         if PRED_NOISE:
